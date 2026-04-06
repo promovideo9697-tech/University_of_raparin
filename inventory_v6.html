@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سیستەمی جەردی کەلوپەل — زانکۆی ڕاپەڕین</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f6fa;--sidebar:#1a2340;--card:#fff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--accent:#2563eb;--danger:#ef4444;
+  --success:#22c55e;--warning:#f59e0b;--shadow:0 2px 12px rgba(0,0,0,.08);
+  --radius:10px;--font:'Calibri','Segoe UI',sans-serif
+}
+body.dark{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--sidebar:#0f172a}
+body{font-family:var(--font);background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;min-height:100vh;background:var(--sidebar);color:#fff;display:flex;flex-direction:column;position:fixed;right:0;top:0;bottom:0;z-index:100}
+.sidebar-logo{padding:16px;border-bottom:1px solid rgba(255,255,255,.1);font-size:14px;font-weight:700;line-height:1.4}
+.sidebar-logo span{display:block;font-size:11px;opacity:.6;font-weight:400;margin-top:2px}
+.nav-group{padding:6px 0}
+.nav-label{padding:5px 16px;font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;transition:.2s;font-size:13px;border-right:3px solid transparent;color:rgba(255,255,255,.75)}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(37,99,235,.25);border-right-color:#2563eb;color:#fff}
+.nav-item .ico{font-size:17px;width:22px;text-align:center}
+.sidebar-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.main{margin-right:240px;flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:90;box-shadow:var(--shadow)}
+.topbar-title{font-size:16px;font-weight:700}
+.content{padding:20px;flex:1}
+.page{display:none}.page.active{display:block}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
+.stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.stat-val{font-size:22px;font-weight:700}.stat-label{font-size:11px;color:var(--muted)}
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:14px;font-weight:700}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--bg);padding:9px 12px;text-align:right;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(37,99,235,.03)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-family:var(--font);font-size:12px;font-weight:600;transition:.2s}
+.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-success{background:#22c55e;color:#fff}.btn-danger{background:#ef4444;color:#fff}
+.btn-warning{background:#f59e0b;color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--bg)}.btn-sm{padding:4px 9px;font-size:11px}.btn-icon{padding:6px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:14px;padding:24px;width:520px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{font-size:16px;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}.form-group.full{grid-column:1/-1}
+label{font-size:11px;font-weight:600;color:var(--muted)}
+input,select,textarea{padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:var(--font);font-size:12px;background:var(--bg);color:var(--text);transition:.2s;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.badge-green{background:#dcfce7;color:#166534}.badge-red{background:#fee2e2;color:#991b1b}
+.badge-blue{background:#dbeafe;color:#1e40af}.badge-yellow{background:#fef9c3;color:#854d0e}
+.badge-gray{background:#f1f5f9;color:#475569}
+.role-admin{background:#fef3c7;color:#92400e}.role-member{background:#ede9fe;color:#5b21b6}
+.search-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.alert-info{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+.alert-danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.alert-success{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.log-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.log-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.log-text{font-size:12px}.log-time{font-size:10px;color:var(--muted)}
+.empty{text-align:center;padding:40px;color:var(--muted)}.empty-icon{font-size:40px;margin-bottom:10px}
+.year-card{background:linear-gradient(135deg,#1a2340,#2563eb);color:#fff;border-radius:14px;padding:20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.tab{padding:9px 18px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.tab.active{color:#2563eb;border-bottom-color:#2563eb}
+/* AUTOCOMPLETE */
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:100%;right:0;left:0;z-index:9999;background:var(--card);border:1px solid #2563eb;border-top:none;border-radius:0 0 8px 8px;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15);display:none}
+.ac-list.open{display:block}
+.ac-item{padding:8px 12px;cursor:pointer;font-size:12px;transition:.15s;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.ac-item:hover,.ac-item.selected{background:rgba(37,99,235,.08);color:#2563eb}
+.ac-badge{font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--muted);margin-right:auto}
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:420px}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{max-width:75%;padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.5}
+.chat-msg.me{background:#2563eb;color:#fff;align-self:flex-start;border-bottom-right-radius:4px}
+.chat-msg.other{background:var(--bg);border:1px solid var(--border);align-self:flex-end;border-bottom-left-radius:4px}
+.chat-msg .meta{font-size:10px;opacity:.7;margin-top:3px}
+.chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border)}
+/* IMPORT */
+.import-zone{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)}
+.import-zone:hover{border-color:#2563eb;background:rgba(37,99,235,.04)}
+/* NOTIF BADGE */
+.notif{position:absolute;left:10px;top:8px;background:#ef4444;color:#fff;border-radius:100px;font-size:9px;padding:1px 5px;font-weight:700;min-width:16px;text-align:center}
+body.dark th{background:#0f172a}
+body.dark input,body.dark select,body.dark textarea{background:#0f172a}
+@media(max-width:900px){.sidebar{width:56px}.sidebar .nav-item span,.sidebar-logo span,.nav-label{display:none}.main{margin-right:56px}.stat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ========== MODALS ========== -->
+
+<!-- ADD ITEM -->
+<div class="modal-overlay" id="modalAddItem">
+<div class="modal" style="width:580px">
+  <h3>➕ زیادکردنی کەلوپەلی نوێ</h3>
+  <div class="form-grid">
+    <div class="form-group full">
+      <label>ناوی کەلوپەل *</label>
+      <div class="ac-wrap">
+        <input type="text" id="fi_name" placeholder="ناو بنووسە — پێشنیار دەردەکەوێت..." autocomplete="off"
+          oninput="acFilter('fi_name','ac_name',getItemNames())"
+          onkeydown="acKey(event,'ac_name','fi_name')">
+        <div class="ac-list" id="ac_name"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>جۆر</label>
+      <div class="ac-wrap">
+        <input type="text" id="fi_type" placeholder="جۆر بنووسە..." autocomplete="off"
+          oninput="acFilter('fi_type','ac_type',getItemTypes())"
+          onkeydown="acKey(event,'ac_type','fi_type')">
+        <div class="ac-list" id="ac_type"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>ڕەنگ</label>
+      <div class="ac-wrap">
+        <input type="text" id="fi_color" placeholder="ڕەنگ..." autocomplete="off"
+          oninput="acFilter('fi_color','ac_color',getItemColors())"
+          onkeydown="acKey(event,'ac_color','fi_color')">
+        <div class="ac-list" id="ac_color"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>ژمارە *</label>
+      <input type="number" id="fi_qty" min="1" value="1">
+    </div>
+    <div class="form-group">
+      <label>یەکە</label>
+      <select id="fi_unit"><option>دانە</option><option>دەستە</option><option>کیلۆ</option><option>بۆکس</option><option>جووت</option></select>
+    </div>
+    <div class="form-group">
+      <label>بارودۆخ</label>
+      <select id="fi_status"><option value="باش">باش</option><option value="مامناوەند">مامناوەند</option><option value="خراپ">خراپ</option></select>
+    </div>
+    <div class="form-group full" style="background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)">
+      <label style="margin-bottom:8px;display:block;font-size:12px;color:var(--text)">📍 بەڕێوەبەرایەتی و هۆبە *</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label>بەڕێوەبەرایەتی</label>
+          <select id="fi_dept" onchange="renderInlineRooms()"><option value="">هەڵبژێرە</option></select>
+        </div>
+        <div>
+          <label>هۆبە</label>
+          <select id="fi_room"><option value="">— پێشتر بەڕێوەبەرایەتی —</option></select>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <span style="font-size:11px;color:#2563eb;cursor:pointer" onclick="toggleQuickRoom()">➕ هۆبەی نوێ زیادبکە</span>
+      </div>
+      <div id="fi_quick_room" style="display:none;margin-top:8px;display:flex;gap:8px;align-items:center">
+        <input type="text" id="fi_new_room_name" placeholder="ناوی هۆبەی نوێ..." style="flex:1">
+        <button type="button" class="btn btn-primary btn-sm" onclick="quickAddRoom()">➕</button>
+      </div>
+    </div>
+    <div class="form-group full">
+      <label>تێبینی</label>
+      <textarea id="fi_note" rows="2" placeholder="تێبینی..."></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalAddItem')">پاشگەزبوونەوە</button>
+    <button class="btn btn-primary" onclick="saveItem()">✅ خەزنکردن</button>
+  </div>
+</div></div>
+
+<!-- EDIT ITEM -->
+<div class="modal-overlay" id="modalEditItem">
+<div class="modal">
+  <h3>✏️ دەستکاریکردنی کەلوپەل</h3>
+  <div class="form-grid">
+    <div class="form-group full">
+      <label>ناوی کەلوپەل *</label>
+      <input type="text" id="ei_name">
+    </div>
+    <div class="form-group">
+      <label>جۆر</label>
+      <div class="ac-wrap">
+        <input type="text" id="ei_type" placeholder="جۆر بنووسە..." autocomplete="off"
+          oninput="acFilter('ei_type','ac_eitype',getItemTypes())"
+          onkeydown="acKey(event,'ac_eitype','ei_type')">
+        <div class="ac-list" id="ac_eitype"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>ڕەنگ</label>
+      <div class="ac-wrap">
+        <input type="text" id="ei_color" placeholder="ڕەنگ..." autocomplete="off"
+          oninput="acFilter('ei_color','ac_eicolor',getItemColors())"
+          onkeydown="acKey(event,'ac_eicolor','ei_color')">
+        <div class="ac-list" id="ac_eicolor"></div>
+      </div>
+    </div>
+    <div class="form-group"><label>ژمارە</label><input type="number" id="ei_qty" min="0"></div>
+    <div class="form-group"><label>یەکە</label><select id="ei_unit"><option>دانە</option><option>دەستە</option><option>کیلۆ</option><option>بۆکس</option><option>جووت</option></select></div>
+    <div class="form-group"><label>بەڕێوەبەرایەتی</label><select id="ei_dept" onchange="populateRoomSelect(this.value,'ei_room')"></select></div>
+    <div class="form-group"><label>هۆبە</label><select id="ei_room"></select></div>
+    <div class="form-group"><label>بارودۆخ</label><select id="ei_status"><option value="باش">باش</option><option value="مامناوەند">مامناوەند</option><option value="خراپ">خراپ</option></select></div>
+    <div class="form-group full"><label>تێبینی</label><textarea id="ei_note" rows="2"></textarea></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalEditItem')">پاشگەزبوونەوە</button>
+    <button class="btn btn-primary" onclick="updateItem()">✅ نوێکردنەوە</button>
+  </div>
+</div></div>
+
+<!-- TRANSFER -->
+<div class="modal-overlay" id="modalTransfer">
+<div class="modal">
+  <h3>🔄 گواستنەوەی کەلوپەل</h3>
+  <div class="form-grid">
+    <div class="form-group full"><label>کەلوپەل</label><select id="tr_item"></select></div>
+    <div class="form-group"><label>بەڕێوەبەرایەتی سەرچاوە</label><select id="tr_from_dept" onchange="populateRoomSelect(this.value,'tr_from_room')"></select></div>
+    <div class="form-group"><label>هۆبەی سەرچاوە</label><select id="tr_from_room"></select></div>
+    <div class="form-group"><label>بەڕێوەبەرایەتی مەبەست</label><select id="tr_to_dept" onchange="populateRoomSelect(this.value,'tr_to_room')"></select></div>
+    <div class="form-group"><label>هۆبەی مەبەست</label><select id="tr_to_room"></select></div>
+    <div class="form-group"><label>ژمارە</label><input type="number" id="tr_qty" min="1" value="1"></div>
+    <div class="form-group full"><label>هۆکار</label><textarea id="tr_note" rows="2" placeholder="هۆکاری گواستنەوە..."></textarea></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalTransfer')">پاشگەزبوونەوە</button>
+    <button class="btn btn-primary" onclick="doTransfer()">🔄 گواستنەوە</button>
+  </div>
+</div></div>
+
+<!-- DELETE -->
+<div class="modal-overlay" id="modalDelete">
+<div class="modal" style="width:400px">
+  <h3>🗑️ سڕینەوەی کەلوپەل</h3>
+  <div class="alert alert-danger">⚠️ کەلوپەلەکە بۆ بەشی سڕاوەکان دەگوێزرێتەوە.</div>
+  <div class="form-group" style="margin-bottom:12px">
+    <label>هۆکاری سڕینەوە *</label>
+    <select id="del_reason"><option value="نەماوە">نەماوە / وەرگیراوە</option><option value="خراپبووە">خراپبووە / ناکەرێت</option><option value="دزراوە">دزراوە</option><option value="کۆنبووە">کۆنبووە</option><option value="دیکە">دیکە</option></select>
+  </div>
+  <div class="form-group"><label>تێبینی</label><textarea id="del_note" rows="2"></textarea></div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalDelete')">پاشگەزبوونەوە</button>
+    <button class="btn btn-danger" onclick="confirmDelete()">🗑️ سڕینەوە</button>
+  </div>
+</div></div>
+
+<!-- ADD DEPT -->
+<div class="modal-overlay" id="modalAddDept">
+<div class="modal" style="width:400px">
+  <h3>🏢 زیادکردنی بەڕێوەبەرایەتی / کۆلێژ</h3>
+  <div class="form-group" style="margin-bottom:12px"><label>ناو *</label><input type="text" id="dept_name" placeholder="ناو بنووسە..."></div>
+  <div class="form-group"><label>تێبینی</label><textarea id="dept_note" rows="2"></textarea></div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalAddDept')">پاشگەزبوونەوە</button>
+    <button class="btn btn-primary" onclick="saveDept()">✅ خەزنکردن</button>
+  </div>
+</div></div>
+
+<!-- BARCODE -->
+<div class="modal-overlay" id="modalBarcode">
+<div class="modal" style="width:320px;text-align:center">
+  <h3 style="justify-content:center">📊 بارکۆد</h3>
+  <div id="barcodeContainer" style="padding:14px"></div>
+  <p id="barcodeItemName" style="font-weight:700;margin:6px 0 2px"></p>
+  <p id="barcodeItemId" style="font-size:11px;color:var(--muted);margin-bottom:14px"></p>
+  <div class="form-actions" style="justify-content:center">
+    <button class="btn btn-outline" onclick="closeModal('modalBarcode')">داخستن</button>
+    <button class="btn btn-primary" onclick="printBarcode()">🖨️ چاپ</button>
+  </div>
+</div></div>
+
+<!-- REPORT -->
+<div class="modal-overlay" id="modalReport">
+<div class="modal" style="width:500px">
+  <h3>📄 دروستکردنی ڕاپۆرت</h3>
+  <div class="form-grid">
+    <div class="form-group full"><label>ساڵی ئاکادیمی</label><input type="text" id="rpt_year" placeholder="2025-2026"></div>
+    <div class="form-group full">
+      <label>ڕووپێوی ڕاپۆرت</label>
+      <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer;font-size:12px"><input type="radio" name="rpt_scope" value="all" checked onchange="updateRptRooms()"> 🌐 هەموو زانکۆ</label>
+        <label style="display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer;font-size:12px"><input type="radio" name="rpt_scope" value="dept" onchange="updateRptRooms()"> 🏢 بەڕێوەبەرایەتی دیاریکراو</label>
+        <label style="display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer;font-size:12px"><input type="radio" name="rpt_scope" value="room" onchange="updateRptRooms()"> 🚪 هۆبەی دیاریکراو</label>
+      </div>
+    </div>
+    <div class="form-group" id="rpt_dept_wrap">
+      <label>بەڕێوەبەرایەتی</label>
+      <select id="rpt_dept" onchange="updateRptRooms()"><option value="">هەموو</option></select>
+    </div>
+    <div class="form-group" id="rpt_room_wrap" style="display:none">
+      <label>هۆبە</label>
+      <select id="rpt_room"><option value="">هەموو هۆبەکان</option></select>
+    </div>
+    <div class="form-group"><label>ناوی لیژنەی جەرد</label><input type="text" id="rpt_committee" placeholder="ناو..."></div>
+    <div class="form-group"><label>لێ پرسراو</label><input type="text" id="rpt_supervisor" placeholder="ناو..."></div>
+    <div class="form-group"><label>بەروار</label><input type="date" id="rpt_date"></div>
+  </div>
+  <div id="rpt_preview" style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--muted)">
+    ✅ هەموو کەلوپەلەکان داخڵ دەکرێن
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalReport')">پاشگەزبوونەوە</button>
+    <button class="btn btn-success" onclick="generatePDF()">📥 چاپ / PDF</button>
+  </div>
+</div></div>
+
+<!-- IMPORT -->
+<div class="modal-overlay" id="modalImport">
+<div class="modal" style="width:600px">
+  <h3>📥 داخڵکردن لە Excel / Access</h3>
+  <div id="imp_step1">
+    <div class="import-zone" onclick="document.getElementById('importFile').click()"
+      ondragover="event.preventDefault();this.classList.add('dragover')"
+      ondragleave="this.classList.remove('dragover')"
+      ondrop="handleFileDrop(event)">
+      <div style="font-size:32px;margin-bottom:6px">📂</div>
+      <div style="font-weight:700;margin-bottom:3px">فایل بکێشە ئێرە یان کلیک بکە</div>
+      <div style="font-size:11px;color:var(--muted)">.xlsx / .xls / .csv</div>
+    </div>
+    <input type="file" id="importFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(event)">
+  </div>
+  <div id="imp_step2" style="display:none">
+    <div style="font-weight:700;margin-bottom:8px;color:#2563eb">📋 گونجاندنی ستووندەکان</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label style="font-size:11px">ناوی کەلوپەل</label><select id="map_name" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">جۆر</label><select id="map_type" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">ڕەنگ</label><select id="map_color" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">ژمارە</label><select id="map_qty" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">بەڕێوەبەرایەتی</label><select id="map_dept" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">هۆبە</label><select id="map_room" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">بارودۆخ</label><select id="map_status" style="width:100%;margin-top:3px"></select></div>
+      <div><label style="font-size:11px">تێبینی</label><select id="map_note" style="width:100%;margin-top:3px"></select></div>
+    </div>
+    <div style="font-weight:700;margin-bottom:6px;font-size:12px">پێشبینی:</div>
+    <div style="max-height:200px;overflow-y:auto"><table id="imp_preview_table"><thead id="imp_prev_head"></thead><tbody id="imp_prev_body"></tbody></table></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)" id="imp_count"></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalImport');resetImport()">داخستن</button>
+    <button class="btn btn-outline" id="imp_back_btn" onclick="resetImport()" style="display:none">↩️ گەڕانەوە</button>
+    <button class="btn btn-success" id="imp_do_btn" onclick="doImport()" style="display:none">✅ داخڵکردن</button>
+  </div>
+</div></div>
+
+<!-- ADD MEMBER -->
+<div class="modal-overlay" id="modalAddMember">
+<div class="modal" style="width:420px">
+  <h3>👤 زیادکردنی ئەندام</h3>
+  <div class="form-grid">
+    <div class="form-group full"><label>ناوی تەواو *</label><input type="text" id="mb_name"></div>
+    <div class="form-group full"><label>ناوی بەکارهێنەر *</label><input type="text" id="mb_user"></div>
+    <div class="form-group full"><label>ووشەی نهێنی *</label><input type="password" id="mb_pass"></div>
+    <div class="form-group"><label>ئەستۆ</label><select id="mb_role"><option value="member">ئەندام</option><option value="admin">ئەدمین</option></select></div>
+    <div class="form-group"><label>بەڕێوەبەرایەتی</label><select id="mb_dept"></select></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalAddMember')">پاشگەزبوونەوە</button>
+    <button class="btn btn-primary" onclick="saveMember()">✅ خەزنکردن</button>
+  </div>
+</div></div>
+
+<!-- ADD MY DEPT (member) -->
+<div class="modal-overlay" id="modalAddMyDept">
+<div class="modal" style="width:400px">
+  <h3>🏢 زیادکردنی بەڕێوەبەرایەتی / کۆلێژ</h3>
+  <div class="alert alert-info">ئەم بەڕێوەبەرایەتییە بۆ ئەکاونتی تۆ تایبەت دەکرێتەوە. دواتر دەتوانیت هۆبە زیاد بکەیت.</div>
+  <div class="form-group" style="margin-bottom:12px">
+    <label>ناوی بەڕێوەبەرایەتی / کۆلێژ *</label>
+    <input type="text" id="myDeptName" placeholder="بەڕێوەبەرایەتی ئیداری / کۆلێژی ئەندازیاری...">
+  </div>
+  <div class="form-group" style="margin-bottom:16px">
+    <label>تێبینی (ئارەزوومەند)</label>
+    <textarea id="myDeptNote" rows="2" placeholder="..."></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-outline" onclick="closeModal('modalAddMyDept')">پاشگەزبوونەوە</button>
+    <button class="btn btn-primary" onclick="saveMyDept()">✅ زیادکردن</button>
+  </div>
+</div></div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="position:fixed;inset:0;background:linear-gradient(135deg,#1a2340,#0f172a);display:flex;align-items:center;justify-content:center;z-index:1000">
+  <div style="background:#fff;border-radius:18px;padding:36px;width:400px;max-width:95vw;box-shadow:0 24px 60px rgba(0,0,0,.4)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="margin-bottom:10px"><img src="data:image/png;base64,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" style="width:80px;height:80px;object-fit:contain"></div>
+      <h2 style="font-size:18px;margin-bottom:3px;font-family:Calibri">زانکۆی ڕاپەڕین</h2>
+      <p style="font-size:12px;color:#64748b;font-family:Calibri">سیستەمی جەردی کەلوپەل</p>
+    </div>
+    <div id="loginRememberMsg" style="display:none;margin-bottom:14px" class="alert alert-success">✅ بەکارهێنەر بیرکراوەتەوە</div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:600;color:#64748b;display:block;margin-bottom:4px">ناوی بەکارهێنەر</label>
+      <input type="text" id="login_user" placeholder="username" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-family:Calibri;font-size:13px">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:600;color:#64748b;display:block;margin-bottom:4px">ووشەی نهێنی</label>
+      <input type="password" id="login_pass" placeholder="password" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-family:Calibri;font-size:13px" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <input type="checkbox" id="login_remember" style="width:auto;cursor:pointer">
+      <label for="login_remember" style="font-size:12px;color:#475569;cursor:pointer;font-weight:400">بیرم بکەوە</label>
+    </div>
+    <button onclick="doLogin()" style="width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:Calibri;font-size:14px;font-weight:700;cursor:pointer;transition:.2s">چوونەژوورەوە 🔑</button>
+    <p id="loginErr" style="color:#ef4444;font-size:12px;margin-top:8px;text-align:center;display:none">ناو یان ووشەی نهێنی هەڵەیە</p>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;font-size:11px;color:#94a3b8">
+      📞 پەیوەندی بە ئەدمین: <b style="color:#1e293b;font-size:12px">07508540262</b>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="layout" id="app" style="display:none">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo"><img src="data:image/png;base64,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" style="width:40px;height:40px;object-fit:contain;border-radius:4px;margin-bottom:4px;display:block;margin-right:auto;margin-left:auto"> زانکۆی ڕاپەڕین<span>سیستەمی جەردی کەلوپەل</span></div>
+  <div class="nav-group">
+    <div class="nav-label">سەرەکی</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="ico">📊</span><span>داشبۆرد</span></div>
+    <div class="nav-item" onclick="showPage('items')"><span class="ico">📦</span><span>کەلوپەلەکان</span></div>
+    <div class="nav-item" onclick="showPage('transfer')"><span class="ico">🔄</span><span>گواستنەوە</span></div>
+    <div class="nav-item" onclick="showPage('deleted')"><span class="ico">🗑️</span><span>سڕاوەکان</span></div>
+  </div>
+  <!-- MEMBER NAV -->
+  <div class="nav-group" id="memberNav" style="display:none">
+    <div class="nav-label">بەشەکەم</div>
+    <div class="nav-item" onclick="showPage('mydept')"><span class="ico">🏢</span><span>بەڕێوەبەرایەتیەکەم</span></div>
+    <div class="nav-item" style="position:relative" onclick="showPage('requestReport')"><span class="ico">📨</span><span>داواکاری ڕاپۆرت</span></div>
+    <div class="nav-item" onclick="showPage('chat')"><span class="ico">💬</span><span>چات بە ئەدمین</span></div>
+  </div>
+  <!-- ADMIN NAV -->
+  <div class="nav-group" id="adminNav">
+    <div class="nav-label">بەڕێوەبردن</div>
+    <div class="nav-item" onclick="showPage('depts')"><span class="ico">🏢</span><span>بەڕێوەبەرایەتییەکان</span></div>
+    <div class="nav-item" onclick="showPage('members')"><span class="ico">👥</span><span>ئەندامەکان</span></div>
+    <div class="nav-item" onclick="showPage('reports')"><span class="ico">📄</span><span>ڕاپۆرتەکان</span></div>
+    <div class="nav-item" style="position:relative" onclick="showPage('reportRequests')">
+      <span class="ico">📨</span><span>داواکاریەکان</span>
+      <span id="reqBadge" class="notif" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('activity')"><span class="ico">📋</span><span>چالاکییەکان</span></div>
+    <div class="nav-item" onclick="showPage('chat')"><span class="ico">💬</span><span>چات</span></div>
+    <div class="nav-item" onclick="showPage('yearly')"><span class="ico">📅</span><span>جەردی ساڵانە</span></div>
+    <div class="nav-item" onclick="showPage('settings')"><span class="ico">⚙️</span><span>ڕێکخستنەکان</span></div>
+  </div>
+  <div class="sidebar-bottom">
+    <div style="font-size:10px;color:rgba(255,255,255,.4);padding:4px 16px;margin-bottom:4px">📞 07508540262</div>
+    <div class="nav-item" onclick="doLogout()"><span class="ico">🚪</span><span>چوونەدەرەوە</span></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">داشبۆرد</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="currentUserDisplay" style="font-size:12px;color:var(--muted)"></span>
+      <button onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:18px">🌙</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-grid" id="statGrid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📦 دوایین کەلوپەلەکان</div></div>
+          <div class="table-wrap"><table><thead><tr><th>ناو</th><th>جۆر</th><th>ژمارە</th><th>بەروار</th></tr></thead><tbody id="recentBody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔄 دوایین گواستنەوەکان</div></div>
+          <div style="padding:14px" id="recentTransfers"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEMS -->
+    <div class="page" id="page-items">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📦 هەموو کەلوپەلەکان</div>
+          <div class="search-bar">
+            <input type="text" id="searchItems" placeholder="🔍 گەڕان..." oninput="renderItemsTable()" style="width:180px;padding:7px 10px">
+            <select id="filterDept" onchange="renderItemsTable()" style="padding:7px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-family:var(--font)"><option value="">هەموو</option></select>
+            <div class="ac-wrap">
+              <input type="text" id="filterType" placeholder="جۆر..." autocomplete="off" style="width:120px;padding:7px 10px"
+                oninput="renderItemsTable();acFilter('filterType','ac_ftype',getItemTypes())"
+                onkeydown="acKey(event,'ac_ftype','filterType')">
+              <div class="ac-list" id="ac_ftype"></div>
+            </div>
+            <button class="btn btn-primary" onclick="openAddItem()">➕ زیادکردن</button>
+            <button class="btn btn-outline" onclick="openTransferModal()">🔄 گواستنەوە</button>
+            <button class="btn btn-warning" onclick="openBarcodeSheetModal()">🏷️ چاپی بارکۆد</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>بارکۆد</th><th>ناو</th><th>جۆر</th><th>ڕەنگ</th><th>ژمارە</th><th>یەکە</th><th>بەڕێوەبەرایەتی</th><th>هۆبە</th><th>بارودۆخ</th><th>تێبینی</th><th>بەروار</th><th>کردار</th></tr></thead>
+          <tbody id="itemsBody"></tbody></table>
+        </div>
+        <div style="padding:10px 14px;font-size:11px;color:var(--muted)" id="itemsCount"></div>
+      </div>
+    </div>
+
+    <!-- TRANSFER PAGE -->
+    <div class="page" id="page-transfer">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔄 مێژووی گواستنەوەکان</div><button class="btn btn-primary" onclick="openTransferModal()">➕ گواستنەوەی نوێ</button></div>
+        <div class="table-wrap"><table><thead><tr><th>بەروار</th><th>کەلوپەل</th><th>لە</th><th>بۆ</th><th>ژمارە</th><th>هۆکار</th><th>بەکارهێنەر</th></tr></thead><tbody id="transferBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- DELETED -->
+    <div class="page" id="page-deleted">
+      <div class="alert alert-info">ℹ️ دەتوانیت کەلوپەلی سڕاو بەتەواوی بسڕیتەوە.</div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗑️ کەلوپەلی سڕاو</div>
+          <button class="btn btn-danger btn-sm" onclick="clearAllDeleted()">🗑️ سڕینەوەی هەموو</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>ناو</th><th>جۆر</th><th>ژمارە</th><th>بەڕێوەبەرایەتی</th><th>هۆکار</th><th>بەروار</th><th>بەکارهێنەر</th><th>کردار</th></tr></thead><tbody id="deletedBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- MY DEPT (member) -->
+    <div class="page" id="page-mydept">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="mydeptTitle">🏢 بەڕێوەبەرایەتیەکەم</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="openAddMyDept()">➕ زیادکردنی بەڕێوەبەرایەتی/کۆلێژ</button>
+            <button class="btn btn-outline btn-sm" id="addMyRoomBtn" onclick="openAddMyRoom()" style="display:none">➕ هۆبە</button>
+          </div>
+        </div>
+        <div id="mydeptContent" style="padding:20px"></div>
+      </div>
+    </div>
+
+    <!-- REQUEST REPORT (member) -->
+    <div class="page" id="page-requestReport">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:760px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📨 داواکاری بۆ ئەدمین</div></div>
+          <div style="padding:16px">
+            <div class="form-group" style="margin-bottom:12px">
+              <label>جۆری داواکاری</label>
+              <select id="req_type" style="width:100%">
+                <option>ڕاپۆرتی کەلوپەل</option>
+                <option>ڕاپۆرتی ساڵانە</option>
+                <option>پشکنینی جەرد</option>
+                <option>داواکاری بەڕێوەبەرایەتی نوێ</option>
+                <option>دیکە</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label>تێبینی</label>
+              <textarea id="req_note" rows="3" style="width:100%" placeholder="وردەکاری..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="sendReportRequest()">📨 ناردن</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📋 داواکاریەکانی پێشوو</div></div>
+          <div style="padding:14px" id="myRequests"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEPTS (admin) -->
+    <div class="page" id="page-depts">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🏢 بەڕێوەبەرایەتییەکان</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modalAddDept')">➕ زیادکردن</button></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>ناو</th><th>هۆبە</th><th>کەلوپەل</th><th>کردار</th></tr></thead><tbody id="deptsBody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" id="roomsPanelTitle">🚪 هۆبەکان</div>
+            <button class="btn btn-primary btn-sm" id="addRoomBtn" onclick="openAddRoomForSelected()" style="display:none">➕</button>
+          </div>
+          <div id="roomsPanelBody" style="padding:28px;text-align:center;color:var(--muted)"><div style="font-size:32px">👈</div><div>کلیکی بەڕێوەبەرایەتیێک بکە</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div class="page" id="page-members">
+      <div class="card">
+        <div class="card-header"><div class="card-title">👥 ئەندامەکان</div>
+          <button class="btn btn-primary" onclick="openModal('modalAddMember')">➕ زیادکردن</button></div>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>ناو</th><th>بەکارهێنەر</th><th>ئەستۆ</th><th>بەڕێوەبەرایەتی</th><th>کردار</th></tr></thead><tbody id="membersBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">📄 ڕاپۆرتی PDF</div>
+          <button class="btn btn-success" onclick="openReportModal()">📥 دروستکردن</button></div>
+        <div style="padding:16px"><div class="alert alert-info">ڕاپۆرتەکە بە نووسی کوردی چاپ دەکرێت — پەنجەرەی چاپ دەکرێتەوە.</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚡ ڕاپۆرتی خێرا</div></div>
+        <div class="table-wrap"><table><thead><tr><th>بەڕێوەبەرایەتی</th><th>هۆبە</th><th>کەلوپەل</th><th>کردار</th></tr></thead><tbody id="quickReportBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- REPORT REQUESTS (admin) -->
+    <div class="page" id="page-reportRequests">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📨 داواکاریەکانی ئەندامەکان</div></div>
+        <div class="table-wrap"><table><thead><tr><th>بەروار</th><th>ئەندام</th><th>بەڕێوەبەرایەتی</th><th>جۆر</th><th>تێبینی</th><th>بارودۆخ</th><th>کردار</th></tr></thead><tbody id="reqBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY (admin) -->
+    <div class="page" id="page-activity">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 چالاکییەکان</div>
+          <div style="display:flex;gap:7px">
+            <select id="actFilterUser" onchange="renderActivity()" style="padding:6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);background:var(--bg);color:var(--text);font-size:12px"><option value="">هەموو ئەندامەکان</option></select>
+            <select id="actFilterType" onchange="renderActivity()" style="padding:6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);background:var(--bg);color:var(--text);font-size:12px">
+              <option value="">هەموو جۆرەکان</option><option>زیادکردن</option><option>سڕینەوە</option><option>گواستنەوە</option><option>دەستکاری</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>بەروار</th><th>ئەندام</th><th>بەڕێوەبەرایەتی</th><th>جۆر</th><th>کەلوپەل</th><th>وردەکاری</th></tr></thead><tbody id="actBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="page" id="page-chat">
+      <div class="card" style="max-width:640px">
+        <div class="card-header">
+          <div class="card-title">💬 چات</div>
+          <select id="chatTarget" onchange="loadChat()" style="padding:6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);background:var(--bg);color:var(--text);font-size:12px" id="chatTargetSel">
+            <option value="">— هەڵبژێرە —</option>
+          </select>
+        </div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="chatMsgs"><div class="empty"><div class="empty-icon">💬</div>بەکارهێنەرێک هەڵبژێرە</div></div>
+          <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="پەیامت بنووسە..." onkeydown="if(event.key==='Enter')sendChat()" style="flex:1">
+            <button class="btn btn-primary" onclick="sendChat()">📤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YEARLY -->
+    <div class="page" id="page-yearly">
+      <div class="year-card">
+        <div><h3>📅 کۆپیی جەردی ساڵانە</h3><p>کۆپیێک لە جەردی ئەمساڵ دروست بکە</p></div>
+        <button class="btn" style="background:#fff;color:#1a2340;font-weight:700" onclick="makeYearlyCopy()">📸 کۆپیکردن</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 کۆپییەکانی ساڵانە</div></div>
+        <div class="table-wrap"><table><thead><tr><th>ساڵ</th><th>بەروار</th><th>کۆی کەلوپەل</th><th>کردار</th></tr></thead><tbody id="yearlyBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div style="max-width:480px">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title">🎨 ڕووکار</div></div>
+          <div style="padding:16px"><button class="btn btn-outline" onclick="toggleTheme()">🌙 گۆڕینی ڕووکار</button></div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title">📥 داخڵکردن لە Excel</div></div>
+          <div style="padding:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="openModal('modalImport')">📥 داخڵکردنی فایل</button>
+            <button class="btn btn-outline" onclick="downloadTemplate()">📋 نموونەی Excel</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title">💾 پاشەکەوت</div></div>
+          <div style="padding:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="exportAllData()">📤 ئەکسپۆرت (JSON)</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importJsonFile').click()">📥 گەڕانەوە (JSON)</button>
+            <input type="file" id="importJsonFile" accept=".json" style="display:none" onchange="importJsonBackup(event)">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔑 گۆڕینی ووشەی نهێنی</div></div>
+          <div style="padding:16px">
+            <div class="form-group" style="margin-bottom:10px"><label>ووشەی نهێنی کۆن</label><input type="password" id="old_pass"></div>
+            <div class="form-group" style="margin-bottom:14px"><label>ووشەی نهێنی نوێ</label><input type="password" id="new_pass"></div>
+            <button class="btn btn-primary" onclick="changePass()">✅ گۆڕین</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /layout -->
+
+<!-- BARCODE SHEET MODAL -->
+<div class="modal-overlay" id="modalBarcodeSheet">
+  <div class="modal" style="width:600px">
+    <h3>🏷️ چاپی بارکۆدەکان</h3>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="form-group full">
+        <label>ناوچەی چاپ</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--text);cursor:pointer">
+            <input type="radio" name="bc_scope" value="all" checked onchange="updateBarcodePreview()"> هەموو کەلوپەلەکان
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--text);cursor:pointer">
+            <input type="radio" name="bc_scope" value="dept" onchange="updateBarcodePreview()"> بەڕێوەبەرایەتی دیاریکراو
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--text);cursor:pointer">
+            <input type="radio" name="bc_scope" value="one" onchange="updateBarcodePreview()"> تەنها یەک کەلوپەل
+          </label>
+        </div>
+      </div>
+      <div class="form-group full" id="bc_dept_wrap">
+        <label>بەڕێوەبەرایەتی</label>
+        <select id="bc_dept" onchange="updateBarcodePreview()" style="width:100%">
+          <option value="">هەموو</option>
+        </select>
+      </div>
+      <div class="form-group full" id="bc_one_wrap" style="display:none">
+        <label>ناوی کەلوپەل (گەڕان)</label>
+        <input type="text" id="bc_search" placeholder="ناو یان بارکۆد..." oninput="updateBarcodeOneList()" style="width:100%">
+        <div id="bc_one_list" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-top:4px;display:none"></div>
+        <input type="hidden" id="bc_one_id" value="">
+      </div>
+      <div class="form-group">
+        <label>قەبارەی بارکۆد</label>
+        <select id="bc_size">
+          <option value="small">بچووک (٦ لە ڕیزەکەدا)</option>
+          <option value="medium" selected>ناوەند (٤ لە ڕیزەکەدا)</option>
+          <option value="large">گەورە (٢ لە ڕیزەکەدا)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ژمارەی کۆپی هەر بارکۆدێک</label>
+        <input type="number" id="bc_copies" value="1" min="1" max="20" style="width:100%">
+      </div>
+    </div>
+    <div id="bc_preview" style="background:var(--bg);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:16px;color:var(--muted)">
+      📊 چاوێرێ بە...
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalBarcodeSheet')">داخستن</button>
+      <button class="btn btn-warning" onclick="printBarcodeSheet()">🖨️ چاپکردن</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA STORE =====
+let DB = {
+  items:[],deleted:[],transfers:[],depts:[],rooms:[],members:[],
+  yearlyCopies:[],reportRequests:[],activityLog:[],chatMessages:[],
+  nextId:1,nextBarcode:1000000
+};
+let currentUser=null, editingItemId=null, deletingItemId=null, selectedDeptId=null;
+
+function saveDB(){try{localStorage.setItem('raparin_db',JSON.stringify(DB));}catch(e){}}
+function loadDB(){try{const d=localStorage.getItem('raparin_db');if(d)DB=JSON.parse(d);}catch(e){}}
+
+function init(){
+  loadDB();
+  if(!DB.reportRequests) DB.reportRequests=[];
+  if(!DB.activityLog) DB.activityLog=[];
+  if(!DB.chatMessages) DB.chatMessages=[];
+  if(!DB.members.length){
+    DB.members.push({id:1,name:'ئەدمینی سەرەکی',username:'admin',password:'admin123',role:'admin',dept:''});
+    DB.nextId=2;
+  }
+  if(!DB.depts.length){
+    DB.depts=[{id:1,name:'ئیداری',note:''},{id:2,name:'کۆلێژی ئەندازیاری',note:''},{id:3,name:'کتێبخانە',note:''}];
+    DB.rooms=[{id:1,deptId:1,name:'ئۆفیسی بەرێوەبەر'},{id:2,deptId:1,name:'ئۆفیسی سەکرەتەر'},{id:3,deptId:2,name:'هۆڵی درووس ١'},{id:4,deptId:3,name:'کتێبخانەی سەرەکی'}];
+    DB.nextId=10;
+  }
+  saveDB();
+  // Check remember me
+  const saved = localStorage.getItem('raparin_saved_user');
+  if(saved){
+    try{
+      const s=JSON.parse(saved);
+      document.getElementById('login_user').value=s.u||'';
+      document.getElementById('login_pass').value=s.p||'';
+      document.getElementById('login_remember').checked=true;
+      document.getElementById('loginRememberMsg').style.display='flex';
+    }catch(e){}
+  }
+}
+
+// ===== AUTH =====
+function doLogin(){
+  const u=document.getElementById('login_user').value.trim();
+  const p=document.getElementById('login_pass').value.trim();
+  const member=DB.members.find(m=>m.username===u&&m.password===p);
+  if(member){
+    currentUser=member;
+    if(document.getElementById('login_remember').checked){
+      localStorage.setItem('raparin_saved_user',JSON.stringify({u,p}));
+    } else {
+      localStorage.removeItem('raparin_saved_user');
+    }
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    const dL=member.dept?' — '+getDeptName(member.dept):'';
+    document.getElementById('currentUserDisplay').textContent=member.name+' ('+(member.role==='admin'?'ئەدمین':'ئەندام')+dL+')';
+    document.getElementById('loginErr').style.display='none';
+    if(member.role==='admin'){document.getElementById('adminNav').style.display='';document.getElementById('memberNav').style.display='none';}
+    else{document.getElementById('adminNav').style.display='none';document.getElementById('memberNav').style.display='';}
+    refreshAll();showPage('dashboard');
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('login_pass').value='';
+  document.getElementById('loginRememberMsg').style.display='none';
+}
+
+// ===== PAGES =====
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(!pg)return;
+  pg.classList.add('active');
+  const titles={dashboard:'داشبۆرد',items:'کەلوپەلەکان',transfer:'گواستنەوە',deleted:'سڕاوەکان',depts:'بەڕێوەبەرایەتییەکان',members:'ئەندامەکان',reports:'ڕاپۆرتەکان',yearly:'جەردی ساڵانە',settings:'ڕێکخستنەکان',mydept:'بەڕێوەبەرایەتیەکەم',requestReport:'داواکاری ڕاپۆرت',reportRequests:'داواکاریەکان',activity:'چالاکییەکان',chat:'چات'};
+  document.getElementById('pageTitle').textContent=titles[id]||'';
+  refreshPage(id);
+}
+function refreshPage(id){
+  if(id==='dashboard')renderDashboard();
+  if(id==='items'){populateDeptSelects();renderItemsTable();}
+  if(id==='transfer')renderTransfers();
+  if(id==='deleted')renderDeleted();
+  if(id==='depts')renderDepts();
+  if(id==='members')renderMembers();
+  if(id==='reports')renderReports();
+  if(id==='yearly')renderYearly();
+  if(id==='mydept')renderMyDept();
+  if(id==='requestReport')renderMyRequests();
+  if(id==='reportRequests')renderReportRequests();
+  if(id==='activity')renderActivity();
+  if(id==='chat')renderChatUsers();
+}
+function refreshAll(){populateDeptSelects();renderDashboard();updateReqBadge();}
+
+// ===== THEME =====
+function toggleTheme(){document.body.classList.toggle('dark');localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light');}
+if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');
+
+// ===== MODAL =====
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
+
+// ===== HELPERS =====
+function now(){return new Date().toLocaleString('en-GB');}
+function getDeptName(id){const d=DB.depts.find(d=>d.id==id);return d?d.name:'';}
+function getRoomName(id){const r=DB.rooms.find(r=>r.id==id);return r?r.name:'';}
+function genBarcode(){return 'RP'+String(DB.nextBarcode++).padStart(7,'0');}
+
+function logActivity(type,itemName,detail){
+  if(!DB.activityLog)DB.activityLog=[];
+  DB.activityLog.push({id:DB.nextId++,date:now(),user:currentUser.username,userName:currentUser.name,dept:currentUser.dept||'',deptName:getDeptName(currentUser.dept),type,itemName,detail});
+  saveDB();updateReqBadge();
+}
+function updateReqBadge(){
+  try{
+    const stored=localStorage.getItem('raparin_db');
+    const freshDB=stored?JSON.parse(stored):DB;
+    const n=(freshDB.reportRequests||[]).filter(r=>r.status==='تازە').length;
+    const b=document.getElementById('reqBadge');
+    if(b){b.textContent=n;b.style.display=n?'inline':'none';}
+  }catch(e){}
+}
+
+// ===== DEPT / ROOM SELECTS =====
+function populateDeptSelects(){
+  ['ei_dept','rpt_dept','tr_from_dept','tr_to_dept','mb_dept','filterDept'].forEach(sid=>{
+    const sel=document.getElementById(sid);if(!sel)return;
+    const cur=sel.value;
+    const hasAll=['rpt_dept','filterDept'].includes(sid);
+    sel.innerHTML=hasAll?'<option value="">هەموو</option>':'<option value="">هەڵبژێرە</option>';
+    DB.depts.forEach(d=>{sel.innerHTML+=`<option value="${d.id}">${d.name}</option>`;});
+    sel.value=cur;
+  });
+  const fd=document.getElementById('fi_dept');
+  if(fd){
+    const cur=fd.value;
+    fd.innerHTML='<option value="">هەڵبژێرە</option>';
+    // For members: only show their dept
+    if(currentUser&&currentUser.role==='member'&&currentUser.dept){
+      const d=DB.depts.find(d=>d.id==currentUser.dept);
+      if(d)fd.innerHTML+=`<option value="${d.id}">${d.name}</option>`;
+    } else {
+      DB.depts.forEach(d=>{fd.innerHTML+=`<option value="${d.id}">${d.name}</option>`;});
+    }
+    fd.value=cur;
+  }
+  const rd=document.getElementById('room_dept');
+  if(rd){rd.innerHTML='<option value="">هەڵبژێرە</option>';DB.depts.forEach(d=>{rd.innerHTML+=`<option value="${d.id}">${d.name}</option>`;});}
+}
+function populateRoomSelect(deptId,selectId,val=''){
+  const sel=document.getElementById(selectId);if(!sel)return;
+  sel.innerHTML='<option value="">هەڵبژێرە</option>';
+  DB.rooms.filter(r=>r.deptId==deptId).forEach(r=>{sel.innerHTML+=`<option value="${r.id}">${r.name}</option>`;});
+  if(val)sel.value=val;
+}
+function renderInlineRooms(){
+  const d=document.getElementById('fi_dept').value;
+  const r=document.getElementById('fi_room');
+  r.innerHTML='<option value="">هەڵبژێرە</option>';
+  DB.rooms.filter(rm=>rm.deptId==d).forEach(rm=>{r.innerHTML+=`<option value="${rm.id}">${rm.name}</option>`;});
+  document.getElementById('fi_quick_room').style.display='none';
+}
+function toggleQuickRoom(){
+  const q=document.getElementById('fi_quick_room');
+  q.style.display=q.style.display==='flex'?'none':'flex';
+}
+function quickAddRoom(){
+  const d=document.getElementById('fi_dept').value;
+  const n=document.getElementById('fi_new_room_name').value.trim();
+  if(!d||!n){alert('بەڕێوەبەرایەتی و ناوی هۆبە پێویستن');return;}
+  const nr={id:DB.nextId++,deptId:parseInt(d),name:n};
+  DB.rooms.push(nr);saveDB();
+  renderInlineRooms();
+  document.getElementById('fi_room').value=nr.id;
+  document.getElementById('fi_new_room_name').value='';
+  document.getElementById('fi_quick_room').style.display='none';
+}
+
+// ===== AUTOCOMPLETE =====
+function getItemNames(){return[...new Set(DB.items.map(i=>i.name).filter(Boolean))].sort();}
+function getItemTypes(){return[...new Set(DB.items.map(i=>i.type).filter(Boolean))].sort();}
+function getItemColors(){return[...new Set(DB.items.map(i=>i.color).filter(Boolean))].sort();}
+let acSel={};
+function acFilter(inputId,listId,source){
+  const inp=document.getElementById(inputId),list=document.getElementById(listId);
+  if(!inp||!list)return;
+  const val=inp.value.trim();
+  if(!val){list.classList.remove('open');return;}
+  const f=source.filter(s=>s.toLowerCase().includes(val.toLowerCase()));
+  if(!f.length){list.classList.remove('open');return;}
+  list.innerHTML=f.slice(0,10).map((s,i)=>`<div class="ac-item${i===0?' selected':''}" onmousedown="acPick('${inputId}','${listId}','${s.replace(/'/g,"&#39;")}')" >${s}<span class="ac-badge">${DB.items.filter(it=>it[inputId.replace(/fi_|ei_|filterT/g,'').replace('ype','type')]===s).length}×</span></div>`).join('');
+  acSel[listId]=0;list.classList.add('open');
+}
+function acPick(inputId,listId,val){
+  document.getElementById(inputId).value=val;
+  document.getElementById(listId).classList.remove('open');
+  if(inputId==='fi_name'){const m=DB.items.find(i=>i.name===val);if(m){if(m.type)document.getElementById('fi_type').value=m.type;if(m.color)document.getElementById('fi_color').value=m.color;}}
+  if(inputId==='filterType')renderItemsTable();
+}
+function acKey(e,listId,inputId){
+  const list=document.getElementById(listId);const items=list?list.querySelectorAll('.ac-item'):[];
+  if(!items.length)return;let idx=acSel[listId]||0;
+  if(e.key==='ArrowDown'){e.preventDefault();idx=Math.min(idx+1,items.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();idx=Math.max(idx-1,0);}
+  else if(e.key==='Enter'&&list.classList.contains('open')){e.preventDefault();acPick(inputId,listId,items[idx].textContent.replace(/\d+×/,'').trim());return;}
+  else if(e.key==='Escape'){list.classList.remove('open');return;}
+  else return;
+  items.forEach(i=>i.classList.remove('selected'));items[idx].classList.add('selected');acSel[listId]=idx;
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.ac-wrap'))document.querySelectorAll('.ac-list').forEach(l=>l.classList.remove('open'));});
+
+// ===== BARCODE =====
+function showBarcode(item){
+  document.getElementById('barcodeItemName').textContent=item.name;
+  document.getElementById('barcodeItemId').textContent=item.barcode;
+  const c=document.getElementById('barcodeContainer');c.innerHTML='<svg id="bsvg"></svg>';
+  JsBarcode('#bsvg',item.barcode,{format:'CODE128',width:2,height:55,displayValue:true,fontSize:13});
+  openModal('modalBarcode');
+}
+function printBarcode(){
+  const svg=document.getElementById('bsvg');
+  const w=window.open('','_blank','width=400,height:280');
+  w.document.write('<html><body style="text-align:center;font-family:Calibri;padding:16px">'+svg.outerHTML+'<p style="font-weight:700">'+document.getElementById('barcodeItemName').textContent+'</p><p style="font-size:11px;color:#888">'+document.getElementById('barcodeItemId').textContent+'</p></body></html>');
+  w.document.close();w.print();
+}
+
+// ===== ADD ITEM =====
+function openAddItem(){
+  populateDeptSelects();
+  document.getElementById('fi_name').value='';document.getElementById('fi_type').value='';
+  document.getElementById('fi_color').value='';document.getElementById('fi_qty').value='1';
+  document.getElementById('fi_note').value='';document.getElementById('fi_status').value='باش';
+  document.querySelectorAll('.ac-list').forEach(l=>l.classList.remove('open'));
+  if(currentUser.role==='member'&&currentUser.dept){
+    document.getElementById('fi_dept').value=currentUser.dept;
+    document.getElementById('fi_dept').disabled=true;
+    renderInlineRooms();
+  } else {
+    document.getElementById('fi_dept').value='';
+    document.getElementById('fi_dept').disabled=false;
+    document.getElementById('fi_room').innerHTML='<option value="">— بەڕێوەبەرایەتی هەڵبژێرە —</option>';
+  }
+  document.getElementById('fi_quick_room').style.display='none';
+  openModal('modalAddItem');
+}
+function saveItem(){
+  const name=document.getElementById('fi_name').value.trim();
+  const type=document.getElementById('fi_type').value.trim();
+  const qty=parseInt(document.getElementById('fi_qty').value)||0;
+  const dept=document.getElementById('fi_dept').value;
+  if(!name||!dept||qty<1){alert('ناو، بەڕێوەبەرایەتی و ژمارە پێویستن');return;}
+  const color=document.getElementById('fi_color').value.trim();
+  const room=document.getElementById('fi_room').value;
+  const ex=DB.items.find(i=>i.name===name&&i.type===type&&i.color===color&&i.room==room&&i.dept==dept);
+  if(ex){ex.qty+=qty;ex.updatedAt=now();logActivity('زیادکردن',name,'زیادکرا: '+qty+' (کۆ: '+ex.qty+')');saveDB();closeModal('modalAddItem');renderItemsTable();renderDashboard();return;}
+  const item={id:DB.nextId++,barcode:genBarcode(),name,type,color,qty,unit:document.getElementById('fi_unit').value,dept,room,status:document.getElementById('fi_status').value,note:document.getElementById('fi_note').value.trim(),createdAt:now(),updatedAt:now(),createdBy:currentUser.username};
+  DB.items.push(item);
+  logActivity('زیادکردن',name,qty+' '+item.unit+' — '+getDeptName(dept));
+  saveDB();closeModal('modalAddItem');renderItemsTable();renderDashboard();
+}
+
+// ===== EDIT ITEM =====
+function editItem(id){
+  const item=DB.items.find(i=>i.id===id);if(!item)return;
+  if(currentUser.role==='member'&&item.dept!=currentUser.dept){alert('تەنها کەلوپەلی بەڕێوەبەرایەتی خۆت');return;}
+  editingItemId=id;
+  document.getElementById('ei_name').value=item.name;
+  document.getElementById('ei_type').value=item.type||'';
+  document.getElementById('ei_color').value=item.color||'';
+  document.getElementById('ei_qty').value=item.qty;
+  document.getElementById('ei_unit').value=item.unit||'دانە';
+  document.getElementById('ei_status').value=item.status||'باش';
+  document.getElementById('ei_note').value=item.note||'';
+  populateDeptSelects();
+  document.getElementById('ei_dept').value=item.dept;
+  if(currentUser.role==='member')document.getElementById('ei_dept').disabled=true;
+  else document.getElementById('ei_dept').disabled=false;
+  populateRoomSelect(item.dept,'ei_room',item.room);
+  openModal('modalEditItem');
+}
+function updateItem(){
+  const item=DB.items.find(i=>i.id===editingItemId);if(!item)return;
+  const oldName=item.name;
+  item.name=document.getElementById('ei_name').value.trim();
+  item.type=document.getElementById('ei_type').value.trim();
+  item.color=document.getElementById('ei_color').value.trim();
+  item.qty=parseInt(document.getElementById('ei_qty').value)||0;
+  item.unit=document.getElementById('ei_unit').value;
+  item.dept=document.getElementById('ei_dept').value;
+  item.room=document.getElementById('ei_room').value;
+  item.status=document.getElementById('ei_status').value;
+  item.note=document.getElementById('ei_note').value.trim();
+  item.updatedAt=now();
+  logActivity('دەستکاری',item.name,'کۆنی: '+oldName);
+  saveDB();closeModal('modalEditItem');renderItemsTable();renderDashboard();
+}
+
+// ===== DELETE =====
+function deleteItem(id){
+  const item=DB.items.find(i=>i.id===id);if(!item)return;
+  if(currentUser.role==='member'&&item.dept!=currentUser.dept){alert('تەنها کەلوپەلی بەڕێوەبەرایەتی خۆت');return;}
+  deletingItemId=id;openModal('modalDelete');
+}
+function confirmDelete(){
+  const item=DB.items.find(i=>i.id===deletingItemId);if(!item)return;
+  const reason=document.getElementById('del_reason').value;
+  const note=document.getElementById('del_note').value;
+  DB.deleted.push({...item,deleteReason:reason,deleteNote:note,deletedAt:now(),deletedBy:currentUser.username});
+  DB.items=DB.items.filter(i=>i.id!==deletingItemId);
+  logActivity('سڕینەوە',item.name,'هۆکار: '+reason);
+  saveDB();closeModal('modalDelete');renderItemsTable();renderDeleted();renderDashboard();
+}
+function permDeleteItem(idx){
+  const real=DB.deleted.length-1-idx;
+  if(!confirm('بەتەواوی دەسڕێتەوە؟'))return;
+  DB.deleted.splice(real,1);saveDB();renderDeleted();
+}
+function clearAllDeleted(){
+  if(!DB.deleted.length)return;
+  if(!confirm('هەموو '+DB.deleted.length+' کەلوپەلی سڕاو بەتەواوی دەسڕێتەوە؟'))return;
+  DB.deleted=[];saveDB();renderDeleted();
+}
+
+// ===== TRANSFER =====
+function openTransferModal(){
+  populateDeptSelects();
+  const sel=document.getElementById('tr_item');sel.innerHTML='<option value="">هەڵبژێرە</option>';
+  let items=DB.items;
+  if(currentUser.role==='member'&&currentUser.dept)items=items.filter(i=>i.dept==currentUser.dept);
+  items.forEach(i=>{sel.innerHTML+=`<option value="${i.id}">${i.name} (${getDeptName(i.dept)})</option>`;});
+  openModal('modalTransfer');
+}
+function doTransfer(){
+  const itemId=parseInt(document.getElementById('tr_item').value);
+  const fromDept=document.getElementById('tr_from_dept').value;
+  const fromRoom=document.getElementById('tr_from_room').value;
+  const toDept=document.getElementById('tr_to_dept').value;
+  const toRoom=document.getElementById('tr_to_room').value;
+  const qty=parseInt(document.getElementById('tr_qty').value)||1;
+  const note=document.getElementById('tr_note').value;
+  const item=DB.items.find(i=>i.id===itemId);
+  if(!item){alert('کەلوپەل هەڵبژێرە');return;}
+  if(item.qty<qty){alert('ژمارە زیاتر لە موجودە');return;}
+  DB.transfers.push({id:DB.nextId++,itemId,itemName:item.name,fromDept:getDeptName(fromDept),fromRoom:getRoomName(fromRoom),toDept:getDeptName(toDept),toRoom:getRoomName(toRoom),qty,note,date:now(),by:currentUser.username});
+  if(qty===item.qty){item.dept=toDept;item.room=toRoom;}
+  else{item.qty-=qty;DB.items.push({...item,id:DB.nextId++,barcode:genBarcode(),qty,dept:toDept,room:toRoom,createdAt:now(),updatedAt:now()});}
+  item.updatedAt=now();
+  logActivity('گواستنەوە',item.name,qty+' — '+getDeptName(fromDept)+' ➜ '+getDeptName(toDept));
+  saveDB();closeModal('modalTransfer');renderItemsTable();renderTransfers();renderDashboard();
+}
+
+// ===== DEPTS (admin) =====
+function saveDept(){
+  const name=document.getElementById('dept_name').value.trim();if(!name){alert('ناو بنووسە');return;}
+  const nd={id:DB.nextId++,name,note:document.getElementById('dept_note').value};
+  DB.depts.push(nd);saveDB();closeModal('modalAddDept');
+  renderDepts();populateDeptSelects();
+  selectedDeptId=nd.id;
+  showDeptRooms(nd.id);
+  alert(`✅ "${name}" زیادکرا! ئێستا دەتوانیت هۆبە زیاد بکەیت.`);
+}
+function deleteDept(id){
+  if(DB.items.some(i=>i.dept==id)){alert('کەلوپەلی تێدایە');return;}
+  DB.depts=DB.depts.filter(d=>d.id!==id);DB.rooms=DB.rooms.filter(r=>r.deptId!==id);
+  saveDB();renderDepts();populateDeptSelects();
+}
+function renderDepts(){
+  document.getElementById('deptsBody').innerHTML=DB.depts.length?DB.depts.map((d,i)=>`
+    <tr style="cursor:pointer;${selectedDeptId===d.id?'background:rgba(37,99,235,.1);font-weight:700':''}" onclick="showDeptRooms(${d.id})">
+      <td>${i+1}</td><td><span style="color:#2563eb;text-decoration:underline">${d.name}</span></td>
+      <td><span class="badge badge-blue">${DB.rooms.filter(r=>r.deptId===d.id).length}</span></td>
+      <td>${DB.items.filter(it=>it.dept==d.id).reduce((s,it)=>s+it.qty,0)}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-danger btn-icon btn-sm" onclick="deleteDept(${d.id})">🗑️</button></td>
+    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">هیچ نییە</td></tr>';
+}
+function showDeptRooms(deptId){
+  selectedDeptId=deptId;renderDepts();
+  const dept=DB.depts.find(d=>d.id===deptId);
+  const rooms=DB.rooms.filter(r=>r.deptId===deptId);
+  document.getElementById('roomsPanelTitle').textContent='🚪 هۆبەکانی: '+(dept?dept.name:'');
+  document.getElementById('addRoomBtn').style.display='inline-flex';
+  document.getElementById('roomsPanelBody').innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>ناو</th><th>کەلوپەل</th><th>کردار</th></tr></thead>
+    <tbody>${rooms.length?rooms.map((r,i)=>`<tr><td>${i+1}</td><td><b>${r.name}</b></td><td>${DB.items.filter(it=>it.room==r.id).reduce((s,it)=>s+it.qty,0)}</td><td><button class="btn btn-danger btn-icon btn-sm" onclick="deleteRoom(${r.id})">🗑️</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:18px;color:var(--muted)">هیچ هۆبەیەک نییە</td></tr>'}
+    </tbody></table></div>`;
+}
+function openAddRoomForSelected(){
+  if(!selectedDeptId)return;
+  const n=prompt('ناوی هۆبەی نوێ:');if(!n||!n.trim())return;
+  DB.rooms.push({id:DB.nextId++,deptId:selectedDeptId,name:n.trim()});
+  saveDB();showDeptRooms(selectedDeptId);populateDeptSelects();
+}
+function deleteRoom(id){
+  if(DB.items.some(i=>i.room==id)){alert('کەلوپەلی تێدایە');return;}
+  DB.rooms=DB.rooms.filter(r=>r.id!==id);saveDB();
+  if(selectedDeptId)showDeptRooms(selectedDeptId);
+}
+
+// ===== MEMBERS =====
+function saveMember(){
+  const name=document.getElementById('mb_name').value.trim();
+  const username=document.getElementById('mb_user').value.trim();
+  const password=document.getElementById('mb_pass').value.trim();
+  if(!name||!username||!password){alert('هەموو خانەکان پڕبکەوە');return;}
+  if(DB.members.some(m=>m.username===username)){alert('ئەم یوسەرنەیمە پێشتر هەیە');return;}
+  DB.members.push({id:DB.nextId++,name,username,password,role:document.getElementById('mb_role').value,dept:document.getElementById('mb_dept').value});
+  saveDB();closeModal('modalAddMember');renderMembers();
+}
+function deleteMember(id){
+  if(id===1){alert('ئەدمینی سەرەکی ناتوانرێت بسڕێتەوە');return;}
+  DB.members=DB.members.filter(m=>m.id!==id);saveDB();renderMembers();
+}
+function renderMembers(){
+  document.getElementById('membersBody').innerHTML=DB.members.map((m,i)=>`
+    <tr><td>${i+1}</td><td><b>${m.name}</b></td><td>${m.username}</td>
+    <td><span class="badge ${m.role==='admin'?'role-admin':'role-member'}">${m.role==='admin'?'ئەدمین':'ئەندام'}</span></td>
+    <td>${getDeptName(m.dept)||'-'}</td>
+    <td>${m.id!==1?`<button class="btn btn-danger btn-sm" onclick="deleteMember(${m.id})">🗑️</button>`:''}</td></tr>`).join('');
+}
+
+// ===== MEMBER: MY DEPT =====
+function renderMyDept(){
+  if(!currentUser||currentUser.role!=='member')return;
+  const deptId=currentUser.dept;
+  const dept=DB.depts.find(d=>d.id==deptId);
+  document.getElementById('mydeptTitle').textContent='🏢 '+(dept?dept.name:'بەڕێوەبەرایەتیەکەم');
+  const addRoomBtn=document.getElementById('addMyRoomBtn');
+  if(addRoomBtn)addRoomBtn.style.display=deptId?'inline-flex':'none';
+  const wrap=document.getElementById('mydeptContent');if(!wrap)return;
+  if(!deptId){
+    wrap.innerHTML=`<div class="alert alert-danger">⚠️ بەڕێوەبەرایەتیت تایبەت نەکراوە. داواکاری بکە یان پەیوەندی بکە بە ئەدمین.</div>
+    <button class="btn btn-primary" onclick="showPage('requestReport');document.getElementById('req_type').value='داواکاری بەڕێوەبەرایەتی نوێ'">📨 داواکاری بەڕێوەبەرایەتی نوێ</button>`;
+    return;
+  }
+  const rooms=DB.rooms.filter(r=>r.deptId==deptId);
+  const items=DB.items.filter(i=>i.dept==deptId);
+  wrap.innerHTML=`
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+      <div class="stat-card"><div class="stat-icon" style="background:#dbeafe">📦</div><div><div class="stat-val">${items.reduce((s,i)=>s+i.qty,0)}</div><div class="stat-label">کۆی کەلوپەل</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#dcfce7">🚪</div><div><div class="stat-val">${rooms.length}</div><div class="stat-label">هۆبە</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fef9c3">📋</div><div><div class="stat-val">${DB.activityLog?DB.activityLog.filter(a=>a.dept==deptId).length:0}</div><div class="stat-label">چالاکییەکانم</div></div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr><th style="padding:8px;background:var(--bg);border-bottom:1px solid var(--border)">#</th><th style="padding:8px;background:var(--bg);border-bottom:1px solid var(--border)">ناو</th><th style="padding:8px;background:var(--bg);border-bottom:1px solid var(--border)">کەلوپەل</th><th style="padding:8px;background:var(--bg);border-bottom:1px solid var(--border)">کردار</th></tr></thead>
+      <tbody>${rooms.length?rooms.map((r,i)=>`<tr><td style="padding:8px;border-bottom:1px solid var(--border)">${i+1}</td><td style="padding:8px;border-bottom:1px solid var(--border)"><b>${r.name}</b></td><td style="padding:8px;border-bottom:1px solid var(--border)">${DB.items.filter(it=>it.room==r.id).reduce((s,it)=>s+it.qty,0)}</td><td style="padding:8px;border-bottom:1px solid var(--border)"><button class="btn btn-danger btn-icon btn-sm" onclick="deleteMemberRoom(${r.id})">🗑️</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--muted)">هۆبە نییە</td></tr>'}</tbody>
+    </table>`;
+}
+function openAddMyDept(){
+  if(!currentUser)return;
+  // Use modal instead of prompt chain
+  openModal('modalAddMyDept');
+}
+function saveMyDept(){
+  const n=document.getElementById('myDeptName').value.trim();
+  if(!n){alert('ناو بنووسە');return;}
+  const ex=DB.depts.find(d=>d.name===n);
+  if(ex){
+    if(confirm('"'+n+'" پێشتر هەیە. ئەم بەڕێوەبەرایەتییە بۆ خۆت تایبەت بکەیت؟')){
+      currentUser.dept=ex.id;
+      const m=DB.members.find(mb=>mb.id===currentUser.id);if(m)m.dept=ex.id;
+      saveDB();closeModal('modalAddMyDept');renderMyDept();populateDeptSelects();
+      const ab=document.getElementById('addMyRoomBtn');if(ab)ab.style.display='inline-flex';
+      document.getElementById('currentUserDisplay').textContent=currentUser.name+' (ئەندام — '+n+')';
+    }
+    return;
+  }
+  const noteEl=document.getElementById('myDeptNote');
+  const nd={id:DB.nextId++,name:n,note:noteEl?noteEl.value.trim():''};
+  DB.depts.push(nd);
+  currentUser.dept=nd.id;
+  const m=DB.members.find(mb=>mb.id===currentUser.id);if(m)m.dept=nd.id;
+  saveDB();populateDeptSelects();
+  document.getElementById('currentUserDisplay').textContent=currentUser.name+' (ئەندام — '+n+')';
+  document.getElementById('myDeptName').value='';
+  if(noteEl)noteEl.value='';
+  const ab=document.getElementById('addMyRoomBtn');if(ab)ab.style.display='inline-flex';
+  closeModal('modalAddMyDept');
+  renderMyDept();
+  alert('✅ بەڕێوەبەرایەتی "'+n+'" زیادکرا!\nئەگەر ویستت هۆبە زیاد بکەیت دووگمەی "➕ هۆبە" بەکاربهێنە.');
+}
+function openAddMyRoom(){
+  if(!currentUser||!currentUser.dept){alert('پێشتر بەڕێوەبەرایەتی زیاد بکە');return;}
+  const n=prompt('ناوی هۆبەی نوێ:');if(!n||!n.trim())return;
+  DB.rooms.push({id:DB.nextId++,deptId:parseInt(currentUser.dept),name:n.trim()});
+  logActivity('زیادکردن','هۆبە','هۆبەی نوێ: '+n.trim());
+  saveDB();renderMyDept();populateDeptSelects();
+}
+function deleteMemberRoom(id){
+  if(DB.items.some(i=>i.room==id)){alert('کەلوپەلی تێدایە');return;}
+  if(!confirm('دڵنیایت؟'))return;
+  DB.rooms=DB.rooms.filter(r=>r.id!==id);saveDB();renderMyDept();populateDeptSelects();
+}
+
+// ===== REPORT REQUEST =====
+function sendReportRequest(){
+  if(!currentUser)return;
+  const type=document.getElementById('req_type').value;
+  const note=document.getElementById('req_note').value.trim();
+  loadDB(); // Reload first to avoid overwriting other data
+  if(!DB.reportRequests)DB.reportRequests=[];
+  DB.reportRequests.push({id:DB.nextId++,date:now(),user:currentUser.username,userName:currentUser.name,dept:currentUser.dept,deptName:getDeptName(currentUser.dept),type,note,status:'تازە'});
+  saveDB();updateReqBadge();
+  document.getElementById('req_note').value='';
+  alert('✅ داواکاریەکەت نێردرا بۆ ئەدمین!');
+  renderMyRequests();
+}
+function renderMyRequests(){
+  if(!currentUser)return;
+  loadDB(); // Always fresh from storage
+  const reqs=(DB.reportRequests||[]).filter(r=>r.user===currentUser.username).reverse();
+  const w=document.getElementById('myRequests');if(!w)return;
+  w.innerHTML=reqs.length?reqs.map(r=>`<div style="padding:9px;background:var(--bg);border-radius:7px;margin-bottom:7px;font-size:12px">
+    <div style="font-weight:700">${r.type}</div>
+    <div style="font-size:10px;color:var(--muted)">${r.date}</div>
+    ${r.note?`<div style="color:var(--muted);font-size:11px;margin-top:2px">${r.note}</div>`:''}
+    <span class="badge ${r.status==='تازە'?'badge-yellow':r.status==='بەرپرسراو'?'badge-green':'badge-gray'}" style="margin-top:4px">${r.status}</span>
+  </div>`).join(''):'<div style="color:var(--muted);font-size:12px">هیچ داواکاریێک نەنێردراوە</div>';
+}
+function renderReportRequests(){
+  loadDB(); // Always reload from localStorage - data may come from another tab
+  updateReqBadge();
+  const reqs=[...(DB.reportRequests||[])].reverse();
+  document.getElementById('reqBody').innerHTML=reqs.length?reqs.map(r=>`<tr>
+    <td style="font-size:10px">${r.date}</td><td><b>${r.userName}</b></td><td>${r.deptName||'-'}</td>
+    <td><span class="badge badge-blue">${r.type}</span></td>
+    <td style="font-size:11px">${r.note||'-'}</td>
+    <td><span class="badge ${r.status==='تازە'?'badge-yellow':'badge-green'}">${r.status}</span></td>
+    <td><div style="display:flex;gap:4px">
+      ${r.status==='تازە'?`<button class="btn btn-success btn-sm" onclick="handleRequest(${r.id})">✅</button>`:''}
+      <button class="btn btn-primary btn-sm" onclick="openReportForDept(${r.dept})">📥 PDF</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteRequest(${r.id})">🗑️</button>
+    </div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">هیچ داواکاریێک نییە</td></tr>';
+}
+function handleRequest(id){
+  loadDB(); // Reload from storage first
+  const req=(DB.reportRequests||[]).find(r=>r.id===id);if(!req)return;
+  if(req.type==='داواکاری بەڕێوەبەرایەتی نوێ'){
+    const n=prompt(`ناوی بەڕێوەبەرایەتی نوێ بۆ ${req.userName}:`,req.note||'');
+    if(n&&n.trim()){
+      const nd={id:DB.nextId++,name:n.trim(),note:''};DB.depts.push(nd);
+      const mb=DB.members.find(m=>m.username===req.user);if(mb)mb.dept=nd.id;
+      req.status='بەرپرسراو';saveDB();populateDeptSelects();
+      alert(`✅ "${n.trim()}" دروستکرا و بۆ ${req.userName} تایبەت کرایەوە.`);
+    }
+  } else { req.status='بەرپرسراو'; }
+  saveDB();renderReportRequests();updateReqBadge();
+}
+function deleteRequest(id){
+  loadDB();
+  DB.reportRequests=(DB.reportRequests||[]).filter(r=>r.id!==id);
+  saveDB();renderReportRequests();updateReqBadge();
+}
+
+// ===== ACTIVITY =====
+function renderActivity(){
+  const userSel=document.getElementById('actFilterUser');
+  const userF=userSel?userSel.value:'';
+  const typeF=document.getElementById('actFilterType')?document.getElementById('actFilterType').value:'';
+  // Populate user filter once
+  if(userSel&&userSel.options.length<=1){
+    DB.members.filter(m=>m.role==='member').forEach(m=>{userSel.innerHTML+=`<option value="${m.username}">${m.name}</option>`;});
+  }
+  let logs=[...(DB.activityLog||[])].reverse();
+  if(userF)logs=logs.filter(l=>l.user===userF);
+  if(typeF)logs=logs.filter(l=>l.type===typeF);
+  document.getElementById('actBody').innerHTML=logs.length?logs.map(l=>`<tr>
+    <td style="font-size:10px">${l.date}</td><td><b>${l.userName||l.user}</b></td><td>${l.deptName||'-'}</td>
+    <td><span class="badge ${l.type==='زیادکردن'?'badge-green':l.type==='سڕینەوە'?'badge-red':l.type==='گواستنەوە'?'badge-blue':'badge-yellow'}">${l.type}</span></td>
+    <td>${l.itemName}</td><td style="font-size:11px;color:var(--muted)">${l.detail||''}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">هیچ چالاکیێک نەتۆمارکراوە</td></tr>';
+}
+
+// ===== CHAT =====
+function renderChatUsers(){
+  const sel=document.getElementById('chatTarget');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— هەڵبژێرە —</option>';
+  if(currentUser.role==='admin'){
+    DB.members.filter(m=>m.role==='member').forEach(m=>{sel.innerHTML+=`<option value="${m.username}">${m.name} (${getDeptName(m.dept)||'—'})</option>`;});
+  } else {
+    sel.innerHTML='<option value="admin">ئەدمین</option>';
+    sel.value='admin';
+    loadChat();
+    return;
+  }
+  sel.value=cur;
+  if(cur)loadChat();
+}
+let chatTimer=null;
+function loadChat(){
+  const target=document.getElementById('chatTarget').value;
+  if(!target)return;
+  if(chatTimer)clearInterval(chatTimer);
+  renderChatMsgs(target);
+  // Poll every 2s - reload from localStorage each time
+  chatTimer=setInterval(()=>{
+    loadDB(); // Re-read from localStorage to get messages from other tabs
+    renderChatMsgs(target);
+    // Also update badge
+    updateReqBadge();
+  },2000);
+}
+function renderChatMsgs(target){
+  if(!DB.chatMessages)DB.chatMessages=[];
+  const key=getChatKey(currentUser.username,target);
+  const msgs=DB.chatMessages.filter(m=>m.key===key);
+  const div=document.getElementById('chatMsgs');if(!div)return;
+  const wasAtBottom = div.scrollHeight - div.scrollTop - div.clientHeight < 40;
+  div.innerHTML=msgs.length?msgs.map(m=>`
+    <div style="display:flex;flex-direction:column;align-items:${m.from===currentUser.username?'flex-start':'flex-end'}">
+      <div class="chat-msg ${m.from===currentUser.username?'me':'other'}">
+        ${m.text}
+        <div class="meta">${m.from} • ${m.time}</div>
+      </div>
+    </div>`).join(''):'<div class="empty"><div class="empty-icon">💬</div>هیچ پەیامێک نییە</div>';
+  if(wasAtBottom||msgs.length<3) div.scrollTop=div.scrollHeight;
+}
+function getChatKey(a,b){return[a,b].sort().join('__');}
+function sendChat(){
+  const target=document.getElementById('chatTarget').value;
+  const inp=document.getElementById('chatInput');
+  const text=inp.value.trim();if(!text||!target)return;
+  loadDB(); // Reload first so we don't overwrite another tab's data
+  if(!DB.chatMessages)DB.chatMessages=[];
+  DB.chatMessages.push({key:getChatKey(currentUser.username,target),from:currentUser.username,to:target,text,time:now()});
+  saveDB();inp.value='';renderChatMsgs(target);
+}
+
+// ===== REPORT PDF =====
+function openReportModal(){
+  populateDeptSelects();
+  document.getElementById('rpt_date').value=new Date().toISOString().split('T')[0];
+  const y=new Date().getFullYear();
+  document.getElementById('rpt_year').value=y+'-'+(y+1);
+  document.getElementById('rpt_dept').value='';
+  document.getElementById('rpt_room').innerHTML='<option value="">هەموو هۆبەکان</option>';
+  document.querySelectorAll('input[name="rpt_scope"]')[0].checked=true;
+  updateRptRooms();
+  openModal('modalReport');
+}
+function openReportForDept(deptId){
+  populateDeptSelects();
+  document.getElementById('rpt_date').value=new Date().toISOString().split('T')[0];
+  const y=new Date().getFullYear();document.getElementById('rpt_year').value=y+'-'+(y+1);
+  // Set scope to dept
+  const radios=document.querySelectorAll('input[name="rpt_scope"]');
+  radios.forEach(r=>{r.checked=(r.value==='dept');});
+  document.getElementById('rpt_dept').value=deptId;
+  updateRptRooms();
+  openModal('modalReport');
+}
+function updateRptRooms(){
+  const scope=(document.querySelector('input[name="rpt_scope"]:checked')||{}).value||'all';
+  const deptId=document.getElementById('rpt_dept').value;
+  const deptWrap=document.getElementById('rpt_dept_wrap');
+  const roomWrap=document.getElementById('rpt_room_wrap');
+  const roomSel=document.getElementById('rpt_room');
+  const preview=document.getElementById('rpt_preview');
+
+  // Show/hide dept selector
+  if(deptWrap) deptWrap.style.display=(scope==='all')?'none':'';
+  // Show/hide room selector
+  if(roomWrap) roomWrap.style.display=(scope==='room')?'':'none';
+
+  // Populate rooms
+  if(scope==='room'&&deptId){
+    roomSel.innerHTML='<option value="">هەموو هۆبەکان</option>';
+    DB.rooms.filter(r=>r.deptId==deptId).forEach(r=>{
+      roomSel.innerHTML+=`<option value="${r.id}">${r.name}</option>`;
+    });
+  }
+
+  // Preview count
+  if(preview){
+    let items=DB.items;
+    if(scope==='dept'&&deptId) items=items.filter(i=>i.dept==deptId);
+    else if(scope==='room'){
+      const roomId=roomSel.value;
+      if(deptId&&!roomId) items=items.filter(i=>i.dept==deptId);
+      else if(roomId) items=items.filter(i=>i.room==roomId);
+    }
+    const label=scope==='all'?'هەموو زانکۆ':scope==='dept'?(deptId?getDeptName(deptId):'— بەڕێوەبەرایەتی هەڵبژێرە'):deptId?getDeptName(deptId)+'...':'— بەڕێوەبەرایەتی هەڵبژێرە';
+    preview.innerHTML='📊 '+label+' — <b>'+items.length+'</b> جۆر کەلوپەل، کۆی ژمارە: <b>'+items.reduce((s,i)=>s+i.qty,0)+'</b> دانە';
+  }
+}
+function generatePDF(){
+  const scope=(document.querySelector('input[name="rpt_scope"]:checked')||{}).value||'all';
+  const deptId=document.getElementById('rpt_dept').value;
+  const roomId=document.getElementById('rpt_room').value;
+  const year=document.getElementById('rpt_year').value||'';
+  const committee=document.getElementById('rpt_committee').value||'';
+  const supervisor=document.getElementById('rpt_supervisor').value||'';
+  const date=document.getElementById('rpt_date').value||now().split(' ')[0];
+
+  let items=DB.items;
+  let scopeLabel='هەموو زانکۆ';
+
+  if(scope==='dept'&&deptId){
+    items=items.filter(i=>i.dept==deptId);
+    scopeLabel=getDeptName(deptId);
+  } else if(scope==='room'){
+    if(roomId){
+      items=items.filter(i=>i.room==roomId);
+      scopeLabel=(deptId?getDeptName(deptId)+' / ':'')+getRoomName(roomId);
+    } else if(deptId){
+      items=items.filter(i=>i.dept==deptId);
+      scopeLabel=getDeptName(deptId)+' (هەموو هۆبەکان)';
+    }
+  }
+
+  const rows=items.map((item,i)=>`<tr style="background:${i%2===0?'#fff':'#f0f4ff'}">
+    <td>${i+1}</td><td style="font-family:monospace;font-size:10px">${item.barcode}</td>
+    <td><b>${item.name}</b></td><td>${item.type||'-'}</td><td>${item.color||'-'}</td>
+    <td style="font-weight:700">${item.qty}</td><td>${item.unit||'دانە'}</td>
+    <td>${getDeptName(item.dept)}</td><td>${getRoomName(item.room)||'-'}</td>
+    <td>${item.status||'باش'}</td><td style="font-size:10px">${item.note||'-'}</td></tr>`).join('');
+
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ku"><head><meta charset="UTF-8"><title>ڕاپۆرتی جەرد — ${scopeLabel}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Calibri',Arial,sans-serif;direction:rtl;color:#000;font-size:12px}
+.h{background:#1a2340;color:#fff;padding:20px;text-align:center}
+.h h1{font-size:20px;font-weight:900;margin-bottom:4px}
+.h h2{font-size:14px;margin-bottom:4px;opacity:.9}
+.h p{font-size:11px;opacity:.8}
+.meta{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:#eef2ff;border-bottom:3px solid #2563eb;font-size:11px}
+.meta b{font-size:13px;color:#1a2340}
+table{width:100%;border-collapse:collapse}
+th{background:#2563eb;color:#fff;padding:8px 6px;text-align:right;font-size:11px;font-weight:700;white-space:nowrap}
+td{padding:7px 6px;border-bottom:1px solid #e2e8f0;font-size:11px}
+tr:nth-child(even) td{background:#f8faff}
+.footer{margin-top:32px;padding:18px;border-top:2px solid #e2e8f0}
+.sig-row{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:12px}
+.sig-box{border:1px solid #ccc;border-radius:8px;padding:14px}
+.sig-box h4{font-size:12px;margin-bottom:6px;color:#1a2340;font-weight:700}
+.sig-name{font-size:13px;font-weight:700;margin-bottom:24px}
+.sig-line{border-bottom:1px dashed #999;margin-top:20px}
+.stamp{border:2px dashed #ccc;border-radius:50%;width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;text-align:center;margin:4px auto}
+@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style></head>
+<body>
+<div class="h">
+  <h1>🏛️ زانکۆی ڕاپەڕین — Raparin University</h1>
+  <h2>ڕاپۆرتی جەردی ساڵانە — ${year}</h2>
+  <p>${scopeLabel} &nbsp;|&nbsp; بەروار: ${date}</p>
+</div>
+<div class="meta">
+  <span>📦 کۆی جۆر: <b>${items.length}</b></span>
+  <span>🔢 کۆی ژمارە: <b>${items.reduce((s,i)=>s+i.qty,0)}</b> دانە</span>
+  <span>📞 07508540262</span>
+</div>
+<table>
+  <thead><tr>
+    <th>#</th><th>بارکۆد</th><th>ناوی کەلوپەل</th><th>جۆر</th><th>ڕەنگ</th>
+    <th>ژمارە</th><th>یەکە</th><th>بەڕێوەبەرایەتی</th><th>هۆبە</th><th>بارودۆخ</th><th>تێبینی</th>
+  </tr></thead>
+  <tbody>${rows||'<tr><td colspan="11" style="text-align:center;padding:24px;color:#888">هیچ کەلوپەلێک نییە</td></tr>'}</tbody>
+</table>
+<div class="footer">
+  <div class="sig-row">
+    <div class="sig-box">
+      <h4>✍️ لیژنەی جەرد</h4>
+      <div class="sig-name">${committee||'................................'}</div>
+      <div class="sig-line"></div>
+      <div style="font-size:10px;color:#888;margin-top:4px">واژۆ</div>
+    </div>
+    <div class="sig-box">
+      <h4>👤 لێ پرسراو / سەرپەرشتیار</h4>
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="flex:1">
+          <div class="sig-name">${supervisor||'................................'}</div>
+          <div class="sig-line"></div>
+          <div style="font-size:10px;color:#888;margin-top:4px">واژۆ</div>
+        </div>
+        <div class="stamp">مووری<br>فەرمی</div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:16px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px">
+    زانکۆی ڕاپەڕین — سیستەمی جەردی کەلوپەل — ${new Date().getFullYear()} — 📞 07508540262
+  </div>
+</div>
+</body></html>`;
+
+  const w=window.open('','_blank','width=1000,height=700');
+  if(!w){alert('پەنجەرەی نوێ نەکرایەوە. pop-up blocker چەک بکەرەوە.');return;}
+  w.document.write(html);w.document.close();
+  setTimeout(()=>{w.focus();w.print();},800);
+  closeModal('modalReport');
+}
+function renderReports(){
+  populateDeptSelects();
+  document.getElementById('quickReportBody').innerHTML=DB.depts.map(d=>{
+    const it=DB.items.filter(i=>i.dept==d.id);
+    return `<tr><td><b>${d.name}</b></td><td>${DB.rooms.filter(r=>r.deptId===d.id).length}</td><td>${it.reduce((s,i)=>s+i.qty,0)}</td><td><button class="btn btn-success btn-sm" onclick="openReportForDept(${d.id})">📥 PDF</button></td></tr>`;
+  }).join('');
+}
+
+// ===== YEARLY =====
+function makeYearlyCopy(){
+  const y=new Date().getFullYear();const label=y+'-'+(y+1);
+  if(DB.yearlyCopies.some(y=>y.year===label)){if(!confirm('کۆپیی ئەمساڵ پێشتر هەیە. دووبارە بکرێتەوە؟'))return;}
+  DB.yearlyCopies=DB.yearlyCopies.filter(y=>y.year!==label);
+  DB.yearlyCopies.push({year:label,date:now(),snapshot:JSON.parse(JSON.stringify(DB.items)),total:DB.items.length});
+  saveDB();renderYearly();alert('✅ کۆپیی '+label+' خەزنکرا!');
+}
+function exportYearlyCopy(year){
+  const copy=DB.yearlyCopies.find(y=>y.year===year);if(!copy)return;
+  const rows=copy.snapshot.map((item,i)=>`<tr style="background:${i%2===0?'#fff':'#f0f4ff'}">
+    <td>${i+1}</td><td style="font-family:monospace;font-size:10px">${item.barcode}</td><td>${item.name}</td><td>${item.type||'-'}</td><td>${item.color||'-'}</td><td>${item.qty}</td><td>${item.unit||'دانە'}</td><td>${getDeptName(item.dept)}</td><td>${getRoomName(item.room)||'-'}</td><td>${item.status||'باش'}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ku"><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Calibri',sans-serif;direction:rtl;font-size:12px}.h{background:#1a2340;color:#fff;padding:14px;text-align:center}.h h1{font-size:17px;font-weight:900}.h p{font-size:11px;opacity:.8;margin-top:3px}table{width:100%;border-collapse:collapse}th{background:#2563eb;color:#fff;padding:7px 5px;text-align:right;font-size:11px}td{padding:6px 5px;border-bottom:1px solid #e2e8f0;font-size:11px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head>
+<body><div class="h"><div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:4px"><img src="data:image/png;base64,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" style="width:55px;height:55px;object-fit:contain"><div style="text-align:right"><h1>زانکۆی ڕاپەڕین — کۆپیی جەردی ساڵانە ${copy.year}</h1><p>بەروار: ${copy.date} | کۆی کەلوپەل: ${copy.total}</p></div></div></div>
+<table><thead><tr><th>#</th><th>بارکۆد</th><th>ناو</th><th>جۆر</th><th>ڕەنگ</th><th>ژمارە</th><th>یەکە</th><th>بەڕێوەبەرایەتی</th><th>هۆبە</th><th>بارودۆخ</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank','width=1000,height:700');w.document.write(html);w.document.close();setTimeout(()=>{w.focus();w.print();},600);
+}
+function renderYearly(){
+  document.getElementById('yearlyBody').innerHTML=DB.yearlyCopies.length?[...DB.yearlyCopies].reverse().map(y=>`<tr><td><b>${y.year}</b></td><td>${y.date}</td><td>${y.total}</td><td><button class="btn btn-success btn-sm" onclick="exportYearlyCopy('${y.year}')">📥 چاپ</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:28px;color:var(--muted)">هیچ کۆپیێک نییە</td></tr>';
+}
+
+// ===== RENDER =====
+function renderDashboard(){
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  let items=DB.items;
+  if(!isAdmin&&currentUser&&currentUser.dept)items=items.filter(i=>i.dept==currentUser.dept);
+  const totalItems=items.reduce((s,i)=>s+i.qty,0);
+  const transfers=isAdmin?DB.transfers.length:DB.transfers.filter(t=>t.by===currentUser.username).length;
+  const deleted=isAdmin?DB.deleted.length:DB.deleted.filter(d=>d.deletedBy===currentUser.username).length;
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-icon" style="background:#dbeafe">📦</div><div><div class="stat-val">${totalItems}</div><div class="stat-label">کۆی کەلوپەل${isAdmin?'':' (بەڕێوەبەرایەتیم)'}</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#dcfce7">${isAdmin?'🏢':'🚪'}</div><div><div class="stat-val">${isAdmin?DB.depts.length:DB.rooms.filter(r=>r.deptId==currentUser.dept).length}</div><div class="stat-label">${isAdmin?'بەڕێوەبەرایەتییەکان':'هۆبەکانم'}</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#fef9c3">🔄</div><div><div class="stat-val">${transfers}</div><div class="stat-label">گواستنەوەکان</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#fee2e2">🗑️</div><div><div class="stat-val">${deleted}</div><div class="stat-label">سڕاوەکان</div></div></div>`;
+  const recent=[...items].sort((a,b)=>b.id-a.id).slice(0,8);
+  document.getElementById('recentBody').innerHTML=recent.map(i=>`<tr><td>${i.name}</td><td><span class="badge badge-blue">${i.type||'-'}</span></td><td><b>${i.qty}</b> ${i.unit||''}</td><td style="font-size:10px;color:var(--muted)">${i.createdAt||''}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:18px;color:var(--muted)">هیچ نییە</td></tr>';
+  let recentT=isAdmin?[...DB.transfers].reverse().slice(0,6):DB.transfers.filter(t=>t.by===currentUser.username).reverse().slice(0,6);
+  document.getElementById('recentTransfers').innerHTML=recentT.length?recentT.map(t=>`<div class="log-item"><div class="log-dot" style="background:#2563eb"></div><div><div class="log-text"><b>${t.itemName}</b> — ${t.fromDept} ➜ ${t.toDept} (${t.qty})</div><div class="log-time">${t.date} — ${t.by}</div></div></div>`).join(''):'<div class="empty"><div class="empty-icon">🔄</div>هیچ گواستنەوەیەک نییە</div>';
+}
+function renderItemsTable(){
+  const search=(document.getElementById('searchItems').value||'').toLowerCase();
+  const typeF=(document.getElementById('filterType').value||'').trim().toLowerCase();
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  let items=DB.items;
+  if(!isAdmin&&currentUser&&currentUser.dept){
+    items=items.filter(i=>i.dept==currentUser.dept);
+    document.getElementById('filterDept').style.display='none';
+  } else {
+    document.getElementById('filterDept').style.display='';
+    const deptF=document.getElementById('filterDept').value;
+    if(deptF)items=items.filter(i=>i.dept==deptF);
+  }
+  if(search)items=items.filter(i=>i.name.toLowerCase().includes(search)||i.barcode.toLowerCase().includes(search)||(i.type||'').toLowerCase().includes(search));
+  if(typeF)items=items.filter(i=>(i.type||'').toLowerCase().includes(typeF));
+  const sb=s=>s==='باش'?'badge-green':s==='مامناوەند'?'badge-yellow':'badge-red';
+  const canEdit=item=>isAdmin||item.dept==currentUser.dept;
+  document.getElementById('itemsBody').innerHTML=items.length?items.map((item,idx)=>`<tr>
+    <td>${idx+1}</td>
+    <td><span style="font-size:10px;font-family:monospace;color:var(--muted)">${item.barcode}</span></td>
+    <td><b>${item.name}</b></td>
+    <td><span class="badge badge-blue">${item.type||'-'}</span></td>
+    <td>${item.color||'-'}</td>
+    <td><b>${item.qty}</b></td>
+    <td>${item.unit||'دانە'}</td>
+    <td>${getDeptName(item.dept)}</td>
+    <td>${getRoomName(item.room)||'-'}</td>
+    <td><span class="badge ${sb(item.status)}">${item.status||'باش'}</span></td>
+    <td style="max-width:100px;font-size:11px">${item.note||'-'}</td>
+    <td style="font-size:10px;color:var(--muted)">${item.createdAt||''}</td>
+    <td><div style="display:flex;gap:3px">
+      <button class="btn btn-outline btn-icon btn-sm" onclick='showBarcode(${JSON.stringify(item).replace(/'/g,"&#39;")})'>📊</button>
+      ${canEdit(item)?`<button class="btn btn-outline btn-icon btn-sm" onclick="editItem(${item.id})">✏️</button>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="deleteItem(${item.id})">🗑️</button>`:''}
+    </div></td></tr>`).join(''):'<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">هیچ کەلوپەلێک نەدۆزرایەوە</td></tr>';
+  document.getElementById('itemsCount').textContent='کۆی نیشاندراو: '+items.length+' کەلوپەل';
+}
+function renderTransfers(){
+  document.getElementById('transferBody').innerHTML=[...DB.transfers].reverse().map(t=>`<tr>
+    <td style="font-size:10px">${t.date}</td><td><b>${t.itemName}</b></td>
+    <td>${t.fromDept}/${t.fromRoom||'-'}</td><td>${t.toDept}/${t.toRoom||'-'}</td>
+    <td><b>${t.qty}</b></td><td style="font-size:11px">${t.note||'-'}</td>
+    <td style="font-size:11px;color:var(--muted)">${t.by}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">هیچ گواستنەوەیەک نییە</td></tr>';
+}
+function renderDeleted(){
+  document.getElementById('deletedBody').innerHTML=DB.deleted.length?[...DB.deleted].reverse().map((i,idx)=>`<tr>
+    <td><b>${i.name}</b></td><td>${i.type||'-'}</td><td>${i.qty}</td><td>${getDeptName(i.dept)}</td>
+    <td><span class="badge badge-red">${i.deleteReason||'-'}</span></td>
+    <td style="font-size:10px">${i.deletedAt||''}</td><td style="font-size:11px;color:var(--muted)">${i.deletedBy||''}</td>
+    <td><button class="btn btn-danger btn-icon btn-sm" onclick="permDeleteItem(${DB.deleted.length-1-idx})">🗑️</button></td></tr>`).join(''):'<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted)">هیچ کەلوپەلێک نەسڕاوەتەوە</td></tr>';
+}
+
+// ===== IMPORT =====
+let importRows=[],importHeaders=[];
+function handleFileDrop(e){e.preventDefault();document.getElementById('importZone').classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)processImportFile(f);}
+function handleFileSelect(e){if(e.target.files[0])processImportFile(e.target.files[0]);}
+function processImportFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();const reader=new FileReader();
+  reader.onload=function(e){
+    let rows=[];
+    if(ext==='csv'){rows=parseCSV(e.target.result);}
+    else{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});}
+    if(rows.length<2){alert('فایلەکە بەتاڵە');return;}
+    importHeaders=rows[0].map(String);importRows=rows.slice(1).filter(r=>r.some(c=>c!==''));
+    showImportStep2();
+  };
+  if(ext==='csv')reader.readAsText(file,'UTF-8');else reader.readAsArrayBuffer(file);
+}
+function parseCSV(text){return text.split(/\r?\n/).filter(Boolean).map(line=>{const r=[];let c='',inQ=false;for(let i=0;i<line.length;i++){if(line[i]==='"')inQ=!inQ;else if(line[i]===','&&!inQ){r.push(c.trim());c='';}else c+=line[i];}r.push(c.trim());return r;});}
+function showImportStep2(){
+  document.getElementById('imp_step1').style.display='none';document.getElementById('imp_step2').style.display='block';
+  document.getElementById('imp_back_btn').style.display='inline-flex';document.getElementById('imp_do_btn').style.display='inline-flex';
+  document.getElementById('imp_count').textContent=importRows.length+' ڕیز دۆزرایەوە';
+  const none='<option value="">— هیچ —</option>';const opts=importHeaders.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+  ['map_name','map_type','map_color','map_qty','map_dept','map_room','map_status','map_note'].forEach(id=>{
+    const sel=document.getElementById(id);sel.innerHTML=none+opts;
+    const kws={map_name:['ناو','name','item'],map_type:['جۆر','type'],map_color:['ڕەنگ','color'],map_qty:['ژمارە','qty','quantity','عدد'],map_dept:['بەڕێوەبەرایەتی','dept','department'],map_room:['هۆبە','room'],map_status:['بارودۆخ','status'],map_note:['تێبینی','note']};
+    const kw=kws[id]||[];
+    for(let i=0;i<importHeaders.length;i++){if(kw.some(k=>importHeaders[i].toLowerCase().includes(k.toLowerCase()))){sel.value=i;break;}}
+  });
+  const head=document.getElementById('imp_prev_head');const body=document.getElementById('imp_prev_body');
+  head.innerHTML='<tr>'+importHeaders.map(h=>`<th style="padding:5px;background:var(--bg);border:1px solid var(--border);font-size:10px">${h}</th>`).join('')+'</tr>';
+  body.innerHTML=importRows.slice(0,5).map(r=>'<tr>'+importHeaders.map((_,i)=>`<td style="padding:4px;border:1px solid var(--border);font-size:10px">${r[i]||''}</td>`).join('')+'</tr>').join('');
+}
+function resetImport(){document.getElementById('imp_step1').style.display='block';document.getElementById('imp_step2').style.display='none';document.getElementById('imp_back_btn').style.display='none';document.getElementById('imp_do_btn').style.display='none';document.getElementById('importFile').value='';importRows=[];importHeaders=[];}
+function doImport(){
+  const gv=id=>{const v=document.getElementById(id).value;return v!==''?parseInt(v):null;};
+  const iName=gv('map_name'),iType=gv('map_type'),iColor=gv('map_color'),iQty=gv('map_qty'),iDept=gv('map_dept'),iRoom=gv('map_room'),iStatus=gv('map_status'),iNote=gv('map_note');
+  if(iName===null){alert('ستووندی ناو پێویستە');return;}
+  let added=0,skipped=0,dc=0,rc=0;
+  importRows.forEach(row=>{
+    const name=(row[iName]||'').trim();if(!name)return;
+    const type=iType!==null?(row[iType]||'').trim():'';const color=iColor!==null?(row[iColor]||'').trim():'';
+    const qty=iQty!==null?Math.abs(parseInt(row[iQty])||1):1;const deptName=iDept!==null?(row[iDept]||'').trim():'';
+    const roomName=iRoom!==null?(row[iRoom]||'').trim():'';const status=iStatus!==null?(row[iStatus]||'باش').trim():'باش';
+    const note=iNote!==null?(row[iNote]||'').trim():'';
+    let deptId='';if(deptName){let d=DB.depts.find(d=>d.name===deptName);if(!d){d={id:DB.nextId++,name:deptName,note:''};DB.depts.push(d);dc++;}deptId=d.id;}
+    let roomId='';if(roomName&&deptId){let r=DB.rooms.find(r=>r.name===roomName&&r.deptId==deptId);if(!r){r={id:DB.nextId++,deptId:parseInt(deptId),name:roomName};DB.rooms.push(r);rc++;}roomId=r.id;}
+    const dup=DB.items.find(i=>i.name===name&&i.type===type&&i.color===color&&i.dept==deptId&&i.room==roomId);
+    if(dup){dup.qty+=qty;dup.updatedAt=now();skipped++;return;}
+    DB.items.push({id:DB.nextId++,barcode:genBarcode(),name,type,color,qty,unit:'دانە',dept:deptId,room:roomId,status,note,createdAt:now(),updatedAt:now(),createdBy:currentUser.username});added++;
+  });
+  saveDB();populateDeptSelects();closeModal('modalImport');resetImport();renderItemsTable();renderDashboard();
+  alert(`✅ تەواو بوو!\n➕ ${added} نوێ\n🔁 ${skipped} دووبارە\n🏢 ${dc} بەڕێوەبەرایەتی نوێ\n🚪 ${rc} هۆبەی نوێ`);
+}
+function downloadTemplate(){
+  const ws=XLSX.utils.aoa_to_sheet([['ناوی کەلوپەل','جۆر','ڕەنگ','ژمارە','بەڕێوەبەرایەتی','هۆبە','بارودۆخ','تێبینی'],['کۆمپیوتەر','','مەشکی','5','بەڕێوەبەرایەتی ئیداری','ئۆفیسی بەرێوەبەر','باش',''],['کورسی','','قاوەیی','10','کۆلێژی ئەندازیاری','هۆڵی درووس ١','باش','']]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'کەلوپەل');XLSX.writeFile(wb,'نموونەی-جەرد.xlsx');
+}
+function exportAllData(){const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='raparin-backup-'+new Date().toISOString().split('T')[0]+'.json';a.click();}
+function importJsonBackup(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){try{const data=JSON.parse(ev.target.result);if(!data.items||!data.members){alert('فایلەکە هەڵەیە');return;}if(!confirm('داتای ئێستا لادەدرێت؟'))return;DB=data;saveDB();location.reload();}catch(err){alert('هەڵە لە خوێندنەوە');}};reader.readAsText(file);}
+function changePass(){const old=document.getElementById('old_pass').value;const nw=document.getElementById('new_pass').value;if(old!==currentUser.password){alert('ووشەی نهێنی کۆن هەڵەیە');return;}if(!nw){alert('ووشەی نهێنی نوێ بنووسە');return;}const m=DB.members.find(m=>m.id===currentUser.id);m.password=nw;currentUser.password=nw;saveDB();alert('✅ ووشەی نهێنی گۆڕدرا');}
+
+// ===== BARCODE SHEET =====
+let bcSelectedItemId = null;
+
+function openBarcodeSheetModal(){
+  // populate dept select
+  const sel = document.getElementById('bc_dept');
+  sel.innerHTML = '<option value="">هەموو بەڕێوەبەرایەتییەکان</option>';
+  DB.depts.forEach(d => { sel.innerHTML += `<option value="${d.id}">${d.name}</option>`; });
+  // reset
+  document.querySelectorAll('input[name="bc_scope"]')[0].checked = true;
+  document.getElementById('bc_search').value = '';
+  document.getElementById('bc_one_id').value = '';
+  document.getElementById('bc_one_list').style.display = 'none';
+  bcSelectedItemId = null;
+  updateBarcodePreview();
+  openModal('modalBarcodeSheet');
+}
+
+function updateBarcodePreview(){
+  const scope = (document.querySelector('input[name="bc_scope"]:checked')||{}).value||'all';
+  const deptWrap = document.getElementById('bc_dept_wrap');
+  const oneWrap = document.getElementById('bc_one_wrap');
+  deptWrap.style.display = (scope === 'dept') ? '' : 'none';
+  oneWrap.style.display = (scope === 'one') ? '' : 'none';
+
+  let items = DB.items;
+  let label = 'هەموو زانکۆ';
+  if(scope === 'dept'){
+    const deptId = document.getElementById('bc_dept').value;
+    if(deptId){ items = items.filter(i => i.dept == deptId); label = getDeptName(deptId); }
+  } else if(scope === 'one'){
+    const id = document.getElementById('bc_one_id').value;
+    const it = id ? DB.items.find(i => i.id == id) : null;
+    items = it ? [it] : [];
+    label = it ? it.name : '— هیچ نەدۆزرایەوە —';
+  }
+  const copies = parseInt(document.getElementById('bc_copies').value)||1;
+  const total = items.length * copies;
+  document.getElementById('bc_preview').innerHTML =
+    `📊 ${label} — <b>${items.length}</b> جۆر کەلوپەل × ${copies} کۆپی = <b>${total}</b> بارکۆد دەچاپدرێت`;
+}
+
+function updateBarcodeOneList(){
+  const q = (document.getElementById('bc_search').value||'').toLowerCase();
+  const list = document.getElementById('bc_one_list');
+  document.getElementById('bc_one_id').value = '';
+  bcSelectedItemId = null;
+  if(!q){ list.style.display='none'; return; }
+  const matches = DB.items.filter(i =>
+    i.name.toLowerCase().includes(q) || i.barcode.toLowerCase().includes(q)
+  ).slice(0,12);
+  if(!matches.length){ list.style.display='none'; return; }
+  list.innerHTML = matches.map(i =>
+    `<div onclick="pickBcItem(${i.id},'${i.name.replace(/'/g,"&#39;")}','${i.barcode}')"
+      style="padding:7px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='rgba(37,99,235,.08)'" onmouseout="this.style.background=''">
+      <b>${i.name}</b> <span style="font-size:10px;color:var(--muted);font-family:monospace">${i.barcode}</span>
+      <span style="font-size:10px;color:var(--muted);float:left">${getDeptName(i.dept)}</span>
+    </div>`
+  ).join('');
+  list.style.display = 'block';
+}
+
+function pickBcItem(id, name, barcode){
+  document.getElementById('bc_search').value = name + ' — ' + barcode;
+  document.getElementById('bc_one_id').value = id;
+  document.getElementById('bc_one_list').style.display = 'none';
+  bcSelectedItemId = id;
+  updateBarcodePreview();
+}
+
+function printBarcodeSheet(){
+  const scope = (document.querySelector('input[name="bc_scope"]:checked')||{}).value||'all';
+  const copies = Math.max(1, parseInt(document.getElementById('bc_copies').value)||1);
+  const size = document.getElementById('bc_size').value;
+
+  let items = DB.items;
+  let scopeLabel = 'هەموو زانکۆ';
+  if(scope === 'dept'){
+    const deptId = document.getElementById('bc_dept').value;
+    if(deptId){ items = items.filter(i => i.dept == deptId); scopeLabel = getDeptName(deptId); }
+  } else if(scope === 'one'){
+    const id = document.getElementById('bc_one_id').value;
+    const it = id ? DB.items.find(i => i.id == id) : null;
+    if(!it){ alert('کەلوپەلێک هەڵبژێرە'); return; }
+    items = [it]; scopeLabel = it.name;
+  }
+  if(!items.length){ alert('هیچ کەلوپەلێک نەدۆزرایەوە'); return; }
+
+  const colMap = {small: 6, medium: 4, large: 2};
+  const cols = colMap[size] || 4;
+  const cellW = size === 'small' ? '14%' : size === 'large' ? '46%' : '22%';
+  const barcodeH = size === 'small' ? 35 : size === 'large' ? 70 : 50;
+  const barcodeW = size === 'small' ? 1.5 : size === 'large' ? 3 : 2;
+  const fontSize = size === 'small' ? 8 : size === 'large' ? 13 : 11;
+
+  // Build repeated list
+  let allItems = [];
+  items.forEach(it => { for(let c=0;c<copies;c++) allItems.push(it); });
+
+  // Generate SVG barcodes via JsBarcode inline
+  const cards = allItems.map(it => {
+    return `<div class="bc-card" data-barcode="${it.barcode}" data-name="${it.name.replace(/"/g,'&quot;')}" data-dept="${getDeptName(it.dept).replace(/"/g,'&quot;')}">
+      <svg class="bc-svg" width="100%" style="display:block"></svg>
+      <div class="bc-name">${it.name}</div>
+      <div class="bc-dept">${getDeptName(it.dept)}${it.room ? ' / '+getRoomName(it.room) : ''}</div>
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html dir="rtl" lang="ku"><head><meta charset="UTF-8">
+<title>بارکۆدەکان — ${scopeLabel}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"><\/script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Calibri',Arial,sans-serif;direction:rtl;padding:10px;background:#fff}
+.header{text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #1a2340}
+.header h2{font-size:16px;color:#1a2340}
+.header p{font-size:11px;color:#64748b;margin-top:2px}
+.grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start}
+.bc-card{width:calc(${Math.floor(100/cols)}% - 6px);border:1px solid #e2e8f0;border-radius:6px;padding:6px;text-align:center;page-break-inside:avoid;break-inside:avoid;background:#fff}
+.bc-name{font-size:${fontSize}px;font-weight:700;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-dept{font-size:${Math.max(7,fontSize-2)}px;color:#64748b;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media print{body{padding:4px}.header{margin-bottom:8px}}
+</style></head><body>
+<div class="header">
+  <h2>🏛️ زانکۆی ڕاپەڕین — بارکۆدەکان</h2>
+  <p>${scopeLabel} &nbsp;|&nbsp; کۆی: ${allItems.length} بارکۆد</p>
+</div>
+<div class="grid">${cards}</div>
+<script>
+document.querySelectorAll('.bc-card').forEach(function(card){
+  var svg = card.querySelector('.bc-svg');
+  var code = card.getAttribute('data-barcode');
+  try{
+    JsBarcode(svg, code, {format:'CODE128',width:${barcodeW},height:${barcodeH},displayValue:true,fontSize:${fontSize},margin:4});
+  }catch(e){}
+});
+setTimeout(function(){window.focus();window.print();},900);
+<\/script>
+</body></html>`;
+
+  const w = window.open('','_blank','width=1000,height=700');
+  if(!w){ alert('پەنجەرەی نوێ نەکرایەوە. pop-up blocker چەک بکەرەوە.'); return; }
+  w.document.write(html);
+  w.document.close();
+  closeModal('modalBarcodeSheet');
+}
+
+// ===== START =====
+init();
+document.getElementById('login_pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Global poll every 3s: update badge and auto-refresh active page
+setInterval(()=>{
+  if(!currentUser) return;
+  updateReqBadge();
+  // If admin is on reportRequests page, auto-refresh
+  const activePage = document.querySelector('.page.active');
+  if(activePage && activePage.id === 'page-reportRequests'){
+    renderReportRequests();
+  }
+}, 3000);
+</script>
+</body>
+</html>
